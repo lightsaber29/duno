@@ -21,3 +21,15 @@ export function fmtDiff(d: number): string {
   if (d < 0) return `−${-d}%`
   return '0%'
 }
+
+/** "2026-10-14" → "10월 14일 수요일" */
+export function fmtDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
+}
+
+/** "21:00" → "오후 9:00" */
+export function fmtTime(hm: string): string {
+  const [h, m] = hm.split(':').map(Number)
+  return new Date(0, 0, 0, h, m).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' })
+}

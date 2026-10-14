@@ -1,106 +1,97 @@
+/* 시안 1 · 사탕 (duno 화면 시안 2판) 토큰. 밝은 테마만. */
 :root {
-  font-family: system-ui, -apple-system, sans-serif;
+  --bg: #fbf9ff;
+  --surface: #ffffff;
+  --soft: #efeaff;
+  --fg: #16131f;
+  --muted: #6f6a80;
+  --line: #e6e2f0;
+  --accent: #ff4f8b;
+  --on-accent: #16131f;
+  --on-color: #16131f;
+  --font: 'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --font-num: 'Gothic A1', 'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', sans-serif;
+  color-scheme: light;
+  font-family: var(--font);
   line-height: 1.5;
-  color-scheme: light dark;
+  background: var(--bg);
+  color: var(--fg);
+}
+* {
+  box-sizing: border-box;
 }
 body {
   margin: 0;
   min-height: 100vh;
+  word-break: keep-all;
 }
+button,
+input,
+output {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+}
+input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* 뼈대 */
 .screen {
-  max-width: 480px;
+  max-width: 430px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 16px 20px 96px;
   display: flex;
   flex-direction: column;
+  gap: 20px;
+}
+.topbar {
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 22px 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 12px;
 }
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.logo {
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
 }
-input,
-button {
-  font: inherit;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #8884;
+.topbar small {
+  margin-left: auto;
 }
-button {
-  cursor: pointer;
-}
-button:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-
-:root {
-  --bg: #fff;
-  background: var(--bg);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1a1a1a;
-  }
-}
-.dial-note {
-  font-size: 13px;
-  opacity: 0.75;
-  text-align: center;
-  margin: 0;
-  min-height: 1.5em;
-}
-.ratio-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.ratio-list li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.ratio-list li.selected {
-  background: #8882;
-}
-.ratio-list .dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex: none;
-}
-.ratio-list .name {
-  flex: 1;
-}
-.ratio-list .sub {
-  font-size: 13px;
-  opacity: 0.7;
-}
-.ratio-list .pct input {
-  width: 3.5em;
-  padding: 4px 6px;
-  text-align: right;
-}
-
-/* 공통 */
 h1 {
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+}
+.hint {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
   margin: 0;
 }
 small,
-.hint {
+.sub {
   font-size: 13px;
-  opacity: 0.7;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
-.hint {
-  margin: 0;
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.num {
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 .row {
   display: flex;
@@ -110,100 +101,359 @@ small,
 .row > .primary {
   margin-left: auto;
 }
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+/* 버튼·입력 */
+button {
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
 .primary {
-  background: #4f7cff;
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
   border-color: transparent;
 }
-.step-head {
-  display: flex;
-  align-items: baseline;
+footer.row {
+  margin-top: 8px;
   gap: 10px;
 }
-.step-head span {
-  opacity: 0.6;
-  font-size: 14px;
+footer.row > button {
+  flex: 1;
+  height: 52px;
+  font-size: 16px;
+  margin-left: 0;
 }
+.link {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  font-size: 13px;
+}
+.danger {
+  color: #d33;
+}
+input[type='text'],
+input[type='time'],
+input[type='date'] {
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  font-size: 15px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.field .box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 16px 12px;
+}
+.box input {
+  width: 100%;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 17px;
+  font-weight: 500;
+}
+.box small {
+  align-self: flex-end;
+  font-size: 12px;
+}
+
+/* 단계 머리 */
+.step-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.step-head .n {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.step-head .n b {
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.progress {
+  display: flex;
+  gap: 6px;
+}
+.progress span {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--soft);
+}
+.progress span.on {
+  background: var(--fg);
+}
+
+/* 칩 */
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 .chip {
-  padding: 6px 12px;
-  border-radius: 999px;
-  --c: #4f7cff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  background: transparent;
+  white-space: nowrap;
+  --c: var(--accent);
 }
 .chip.on {
-  background: var(--c);
-  color: #fff;
-  border-color: transparent;
+  border-color: var(--accent);
+  background: var(--soft);
 }
-.ratio-list input.name {
-  flex: 1;
-  padding: 4px 6px;
+.dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
-.ratio-list .x {
-  padding: 2px 8px;
-  border: none;
-  background: transparent;
-  font-size: 18px;
-}
-.seg {
-  display: inline-flex;
-  border: 1px solid #8884;
-  border-radius: 8px;
+
+/* 목록 줄 */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
 }
-.seg button {
-  border: none;
-  border-radius: 0;
-  padding: 6px 12px;
-  background: transparent;
+.list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 12px 0 16px;
 }
-.seg button.on {
-  background: #8883;
+.list li + li {
+  border-top: 1px solid var(--line);
 }
-.stepper {
-  justify-content: center;
-  gap: 16px;
+.list:not(.card) li {
+  padding: 4px 0;
+  min-height: 48px;
+  gap: 10px;
 }
-.stepper strong {
-  font-size: 22px;
-  min-width: 7em;
-  text-align: center;
+.list .name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
 }
-.stepper button {
-  width: 40px;
-  height: 40px;
+.list li.selected {
+  background: var(--soft);
+}
+.list li.selected .name,
+.list li.top .name {
+  font-weight: 700;
+}
+.list li.top .sub,
+.list li.top .diff {
+  color: var(--fg);
+  font-weight: 700;
+}
+.list input.name {
+  height: 44px;
   padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  min-width: 0;
+}
+.list .x {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
   font-size: 20px;
 }
-.diff {
-  min-width: 3.5em;
+.list .pct {
+  flex: none;
+  display: flex;
+  align-items: center;
+  width: 72px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background: var(--soft);
+  font-size: 15px;
+  font-weight: 500;
+}
+.list li.selected .pct {
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.list .pct input {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   text-align: right;
+  font-size: 15px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+.list .min {
+  flex: none;
+  width: 84px;
+  text-align: right;
+}
+.diff {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ratio-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ratio-editor .list li {
+  cursor: pointer;
+}
+.dial-note {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin: 0;
+  min-height: 1.5em;
+}
+.ratio-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+.ratio-foot b {
+  color: var(--fg);
+}
+
+/* 토글·스테퍼 */
+.seg {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--soft);
+}
+.seg button {
+  border: 0;
+  padding: 0 20px;
+  background: transparent;
+  color: var(--muted);
+}
+.seg button.on {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+.stepper {
+  gap: 8px;
+}
+.stepper button {
+  width: 44px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 20px;
+}
+.stepper strong {
+  width: 140px;
+  text-align: center;
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 현재 상태 */
 .bars {
+  display: flex;
+  flex-direction: column;
+}
+.bars .label {
+  color: var(--fg);
+  font-weight: 600;
+  margin: 12px 0 6px;
+}
+.bars .label:first-child {
+  margin-top: 0;
+}
+.band {
+  display: flex;
+  gap: 2px;
+  height: 54px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.band span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1.2;
+  color: var(--on-color);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.insight {
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-.bar {
-  display: flex;
-  height: 32px;
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 8px;
+.insight p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.45;
 }
-.bar span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 12px;
-  overflow: hidden;
-  white-space: nowrap;
+.insight small {
+  font-size: 13px;
 }
 .pies {
   display: flex;
@@ -212,8 +462,9 @@ small,
   text-align: center;
 }
 .total {
-  font-size: 24px;
-  font-weight: 600;
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-size: 28px;
   margin: 0;
 }
 .hbars {
@@ -238,7 +489,7 @@ small,
 }
 .hbars .track {
   height: 14px;
-  background: #8882;
+  background: var(--soft);
   border-radius: 7px;
   overflow: hidden;
 }
@@ -250,40 +501,77 @@ small,
 .hbars .sub {
   text-align: right;
 }
-.link {
-  border: none;
-  background: none;
-  padding: 0;
-  color: #4f7cff;
-  text-decoration: underline;
-}
-.tabs {
-  position: sticky;
-  bottom: 0;
+
+/* 계획 */
+.plan-row {
   display: flex;
-  max-width: 480px;
-  margin: 0 auto;
-  border-top: 1px solid #8884;
-  background: var(--bg);
+  align-items: center;
+  gap: 22px;
+}
+.plan-row .list {
+  flex: 1;
+  min-width: 0;
+}
+.plan-row .list li {
+  min-height: 42px;
+}
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 18px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.notice .num {
+  font-size: 18px;
+}
+
+/* 탭·토스트 */
+.tabs {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
 }
 .tabs button {
   flex: 1;
-  border: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
   border-radius: 0;
-  padding: 12px;
   background: transparent;
-  opacity: 0.6;
+  color: var(--muted);
+}
+.tabs button::after {
+  content: '';
+  width: 20px;
+  height: 3px;
+  border-radius: 999px;
+  background: transparent;
 }
 .tabs button.on {
-  opacity: 1;
-  font-weight: 600;
+  color: var(--fg);
+  font-weight: 700;
+}
+.tabs button.on::after {
+  background: var(--fg);
 }
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 72px;
+  bottom: 80px;
   transform: translateX(-50%);
-  background: #333;
+  background: var(--fg);
   color: #fff;
   padding: 8px 16px;
   border-radius: 999px;
@@ -295,33 +583,16 @@ small,
   text-align: center;
   cursor: pointer;
 }
-.screen {
-  padding-bottom: 64px;
-}
-.topbar {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 8px 16px 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.danger {
-  color: #d33;
-}
 .test-tools {
   margin-top: 24px;
-  padding: 12px;
-  border: 1px dashed #8886;
-  border-radius: 8px;
+  padding: 12px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
 }
 .test-tools summary {
   cursor: pointer;
-  opacity: 0.7;
+  color: var(--muted);
 }
 .test-tools > * + * {
   margin-top: 8px;
-}
-input[type='date'] {
-  padding: 6px 8px;
 }

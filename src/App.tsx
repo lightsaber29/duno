@@ -61,7 +61,7 @@ export default function App() {
         onCancel={() => setScreen('plan')}
         onDone={(input) => {
           if (input.goal !== d.plan.goal) {
-            if (!window.confirm('핵심 목표가 바뀌었어요. 지난 계획과 기록은 보관하고 새로 시작할까요?')) return
+            if (!window.confirm('핵심 목표가 바뀌었어. 지난 계획과 기록은 보관하고 새로 시작할까?')) return
             run(archivePlan(d.plan.id).then(() => createPlan(session.user.id, { ...input, items: input.items.map((it) => ({ name: it.name })) })), () => setScreen('status'))
           } else {
             run(updatePlan(d, input), () => setScreen('status'))
@@ -75,15 +75,15 @@ export default function App() {
         data={data}
         onClose={() => setScreen('status')}
         onDelete={(date) => {
-          if (!window.confirm(`${date} 기록을 지울까요?`)) return
+          if (!window.confirm(`${date} 기록을 지울까?`)) return
           run(deleteEntry(data.plan.id, date), () => {
-            show('지웠어요')
+            show('지웠어')
             setScreen('status')
           })
         }}
         onSave={(date, minutes, shares: Share[]) =>
           run(saveEntry(data.plan.id, date, minutes, shares), () => {
-            show(minutes === null ? '휴식으로 기록했어요' : '기록했어요')
+            show(minutes === null ? '휴식으로 기록했어' : '기록했어')
             setScreen('status')
           })
         }
@@ -95,10 +95,10 @@ export default function App() {
       <Plan
         data={d}
         onEdit={() => setScreen('edit')}
-        onSeed={() => run(seedEntries(d.plan.id, d.subgoals.filter((s) => !s.removed_at).map((s) => s.id)), () => show('예시 데이터를 넣었어요'))}
+        onSeed={() => run(seedEntries(d.plan.id, d.subgoals.filter((s) => !s.removed_at).map((s) => s.id)), () => show('예시 데이터를 넣었어'))}
         onClearAll={() => {
-          if (!window.confirm('이 계획의 기록을 전부 지울까요? 되돌릴 수 없어요.')) return
-          run(deleteAllEntries(d.plan.id), () => show('기록을 전부 지웠어요'))
+          if (!window.confirm('이 계획의 기록을 전부 지울까? 되돌릴 수 없어.')) return
+          run(deleteAllEntries(d.plan.id), () => show('기록을 전부 지웠어'))
         }}
       />
     )
@@ -110,6 +110,7 @@ export default function App() {
   return (
     <>
       <header className="topbar">
+        <span className="logo">DUNO</span>
         <small>{session.user.email}</small>
         <button type="button" className="link" onClick={() => supabase.auth.signOut()}>로그아웃</button>
       </header>

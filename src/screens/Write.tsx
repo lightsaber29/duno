@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { RatioEditor } from '../components/RatioEditor'
 import { COLORS, OTHER_COLOR } from '../lib/colors'
 import { addOther, addSlice, largestRemainder, removeOther, removeSlice, shareMinutes } from '../lib/ratio'
-import { fmtMinutes, localDate } from '../lib/format'
+import { fmtDate, fmtMinutes, localDate } from '../lib/format'
 import type { Entry, PlanData, Share } from '../lib/db'
 
 const OTHER = 'other'
@@ -20,7 +20,6 @@ export function Write({ data, onSave, onDelete, onClose }: Props) {
   const today = localDate(0)
   const yesterday = localDate(-1)
   const [date, setDate] = useState(today) // 오늘·어제 외의 날도 고를 수 있다(테스트·누적 입력용. 결정 2-3 확장)
-  const dayLabel = date === today ? '오늘' : date === yesterday ? '어제' : date
   const existing = useMemo(() => data.entries.find((e) => e.date === date), [data.entries, date])
 
   const [state, setState] = useState(() => fromEntry(existing, active.map((s) => s.id)))
@@ -58,33 +57,45 @@ export function Write({ data, onSave, onDelete, onClose }: Props) {
 
   return (
     <main className="screen">
-      <h1>{dayLabel}, 목표에 얼마나 썼나요?</h1>
-      <div className="row">
-        <div className="seg">
-          <button type="button" className={date === today ? 'on' : ''} onClick={() => setDate(today)}>오늘</button>
+      <h1>목표에 시간을 얼마나 썼어?</h1>
+      <div className="row" style={{ gap: 12 }}>
+        <div className="seg" role="group" aria-label="기록할 날">
           <button type="button" className={date === yesterday ? 'on' : ''} onClick={() => setDate(yesterday)}>어제</button>
+          <button type="button" className={date === today ? 'on' : ''} onClick={() => setDate(today)}>오늘</button>
         </div>
-        <input type="date" value={date} max={today} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label="날짜" />
+        <label className="sub" style={{ position: 'relative' }}>
+          {fmtDate(date)}
+          {/* 테스트·누적 입력용 날짜 고르기. 글자 위에 투명하게 얹어 누르면 열린다 */}
+          <input type="date" value={date} max={today} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label="날짜" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, padding: 0 }} />
+        </label>
       </div>
 
-      {existing?.minutes === null && <p className="hint">휴식으로 기록한 날이에요. 다시 적으면 바뀝니다.</p>}
-      {lostShares && <p className="hint">이 기록에는 지금은 없는 세부 목표의 몫이 있어요. 저장하면 그 몫은 사라집니다.</p>}
+      {existing?.minutes === null && <p className="hint">휴식으로 기록한 날이야. 다시 적으면 바뀌어.</p>}
+      {lostShares && <p className="hint">이 기록에는 지금은 없는 세부 목표의 몫이 있어. 저장하면 그 몫은 사라져.</p>}
 
-      <div className="row stepper">
-        <button type="button" onClick={() => setState({ ...state, minutes: Math.max(30, minutes - 30) })} disabled={minutes <= 30}>−</button>
-        <strong>{fmtMinutes(minutes)}</strong>
-        <button type="button" onClick={() => setState({ ...state, minutes: Math.min(1440, minutes + 30) })} disabled={minutes >= 1440}>+</button>
+      <div className="stack">
+        <span className="label" id="spent">쓴 시간</span>
+        <div className="row stepper" role="group" aria-labelledby="spent">
+          <button type="button" aria-label="30분 줄이기" onClick={() => setState({ ...state, minutes: Math.max(30, minutes - 30) })} disabled={minutes <= 30}>−</button>
+          <strong>{fmtMinutes(minutes)}</strong>
+          <button type="button" aria-label="30분 늘리기" onClick={() => setState({ ...state, minutes: Math.min(1440, minutes + 30) })} disabled={minutes >= 1440}>+</button>
+        </div>
       </div>
 
-      <div className="chips">
-        {active.map((s, i) => (
-          <button key={s.id} type="button" className={keys.includes(s.id) ? 'chip on' : 'chip'} style={{ '--c': COLORS[i] } as React.CSSProperties} onClick={() => toggle(s.id)}>
-            {s.name}
+      <div className="stack">
+        <span className="label">어디에 나눠 썼어? 여러 개 골라도 돼</span>
+        <div className="chips" role="group" aria-label="어디에 나눠 썼어?">
+          {active.map((s, i) => (
+            <button key={s.id} type="button" className={keys.includes(s.id) ? 'chip on' : 'chip'} aria-pressed={keys.includes(s.id)} onClick={() => toggle(s.id)}>
+              <span className="dot" style={{ background: COLORS[i] }} />
+              {s.name}
+            </button>
+          ))}
+          <button type="button" className={keys.includes(OTHER) ? 'chip on' : 'chip'} aria-pressed={keys.includes(OTHER)} onClick={() => toggle(OTHER)}>
+            <span className="dot" style={{ background: OTHER_COLOR }} />
+            기타
           </button>
-        ))}
-        <button type="button" className={keys.includes(OTHER) ? 'chip on' : 'chip'} style={{ '--c': OTHER_COLOR } as React.CSSProperties} onClick={() => toggle(OTHER)}>
-          기타
-        </button>
+        </div>
       </div>
 
       {slices.length > 0 ? (
@@ -93,20 +104,23 @@ export function Write({ data, onSave, onDelete, onClose }: Props) {
           slices={slices}
           onChange={(r) => setState({ ...state, ratios: r })}
           center={fmtMinutes(minutes)}
-          sub={(s) => `약 ${shareMinutes(minutes, s.ratio)}분`}
+          sub={(s) => `${(minutes * s.ratio) % 100 ? '약 ' : ''}${fmtMinutes(shareMinutes(minutes, s.ratio))}`}
+          total={fmtMinutes(minutes)}
         />
       ) : (
-        <p className="hint">오늘 손댄 세부 목표를 누르세요.</p>
+        <p className="hint">오늘 손댄 세부 목표를 눌러 줘.</p>
       )}
 
       <footer className="row">
-        <button type="button" onClick={onClose}>닫기</button>
-        {existing && <button type="button" className="danger" onClick={() => onDelete(date)}>이 기록 지우기</button>}
-        <button type="button" onClick={() => onSave(date, null, [])}>휴식</button>
         <button type="button" className="primary" disabled={!canSave} onClick={() => onSave(date, minutes, keys.map((k, i) => ({ subgoal_id: k === OTHER ? null : k, ratio: ratios[i] })))}>
           저장
         </button>
+        <button type="button" onClick={() => onSave(date, null, [])}>휴식</button>
       </footer>
+      <div className="row" style={{ justifyContent: 'center', gap: 20 }}>
+        <button type="button" className="link" onClick={onClose}>닫기</button>
+        {existing && <button type="button" className="link danger" onClick={() => onDelete(date)}>이 기록 지우기</button>}
+      </div>
     </main>
   )
 }
