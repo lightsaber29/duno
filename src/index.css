@@ -298,3 +298,11 @@ small,
 .screen {
   padding-bottom: 64px;
 }
+.topbar {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 16px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
