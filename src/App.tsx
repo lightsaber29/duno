@@ -7,8 +7,9 @@ import { Setup } from './screens/Setup'
 import { Write } from './screens/Write'
 import { Status } from './screens/Status'
 import { Plan } from './screens/Plan'
+import { Me } from './screens/Me'
 
-type Screen = 'status' | 'write' | 'plan' | 'edit'
+type Screen = 'status' | 'write' | 'plan' | 'edit' | 'me'
 
 export default function App() {
   const session = useSession()
@@ -102,17 +103,17 @@ export default function App() {
         }}
       />
     )
+  } else if (screen === 'me') {
+    body = <Me email={session.user.email ?? ''} onSignOut={() => supabase.auth.signOut()} />
   } else {
     body = <Status data={data} onWrite={() => setScreen('write')} onView={onView} />
   }
 
-  const tabs = data && (screen === 'status' || screen === 'plan')
+  const tabs = data && (screen === 'status' || screen === 'plan' || screen === 'me')
   return (
     <>
       <header className="topbar">
         <span className="logo">DUNO</span>
-        <small>{session.user.email}</small>
-        <button type="button" className="link" onClick={() => supabase.auth.signOut()}>로그아웃</button>
       </header>
       {body}
       {error && (
@@ -123,6 +124,7 @@ export default function App() {
         <nav className="tabs">
           <button type="button" className={screen === 'status' ? 'on' : ''} onClick={() => setScreen('status')}>현재 상태</button>
           <button type="button" className={screen === 'plan' ? 'on' : ''} onClick={() => setScreen('plan')}>계획</button>
+          <button type="button" className={screen === 'me' ? 'on' : ''} onClick={() => setScreen('me')}>내 정보</button>
         </nav>
       )}
     </>
