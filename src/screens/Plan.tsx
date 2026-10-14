@@ -2,10 +2,10 @@ import { Dial } from '../components/Dial'
 import { COLORS } from '../lib/colors'
 import type { PlanData } from '../lib/db'
 
-type Props = { data: PlanData; onEdit: () => void; onSignOut: () => void }
+type Props = { data: PlanData; onEdit: () => void }
 
 /** 계획 화면(6절). 보기만. 고치기는 목표 설정 화면을 값이 채워진 채 연다. */
-export function Plan({ data, onEdit, onSignOut }: Props) {
+export function Plan({ data, onEdit }: Props) {
   const active = data.subgoals.filter((s) => !s.removed_at)
   const slices = active.map((s, i) => ({ key: s.id, name: s.name, ratio: s.ratio, color: COLORS[i] }))
   return (
@@ -23,7 +23,6 @@ export function Plan({ data, onEdit, onSignOut }: Props) {
       </ul>
       <p className="hint">알림 시간 {data.plan.notify_at}</p>
       <footer className="row">
-        <button type="button" onClick={onSignOut}>로그아웃</button>
         <button type="button" className="primary" onClick={onEdit}>고치기</button>
       </footer>
     </main>

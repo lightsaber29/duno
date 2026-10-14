@@ -83,7 +83,7 @@ export default function App() {
       />
     )
   } else if (screen === 'plan') {
-    body = <Plan data={data} onEdit={() => setScreen('edit')} onSignOut={() => supabase.auth.signOut()} />
+    body = <Plan data={data} onEdit={() => setScreen('edit')} />
   } else {
     body = <Status data={data} onWrite={() => setScreen('write')} onView={onView} />
   }
@@ -91,6 +91,10 @@ export default function App() {
   const tabs = data && (screen === 'status' || screen === 'plan')
   return (
     <>
+      <header className="topbar">
+        <small>{session.user.email}</small>
+        <button type="button" className="link" onClick={() => supabase.auth.signOut()}>로그아웃</button>
+      </header>
       {body}
       {error && (
         <p role="alert" className="error" onClick={() => setError('')}>{error}</p>
