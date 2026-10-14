@@ -16,10 +16,11 @@ export function localDate(offsetDays = 0): string {
 }
 
 /** "+30%", "−20%", "0%" */
+/** 계획 대비 비중 차이. "+65%"는 손익처럼 읽혀서 말로 푼다. */
 export function fmtDiff(d: number): string {
-  if (d > 0) return `+${d}%`
-  if (d < 0) return `−${-d}%`
-  return '0%'
+  if (d > 0) return `${d}%p 더`
+  if (d < 0) return `${-d}%p 덜`
+  return '계획대로'
 }
 
 /** "2026-10-14" → "10월 14일 수요일" */
