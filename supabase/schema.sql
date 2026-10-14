@@ -36,13 +36,13 @@ create table entries (
 
 -- 기록 안의 세부 목표별 몫. subgoal_id가 null이면 기타(결정 2-21).
 create table entry_shares (
+  id bigint generated always as identity primary key,
   entry_id uuid not null references entries(id) on delete cascade,
   subgoal_id uuid references subgoals(id) on delete cascade,
   ratio int not null check (ratio between 1 and 100),
-  primary key (entry_id, subgoal_id)
+  -- nulls not distinct: 기타(null)도 기록당 하나만
+  unique nulls not distinct (entry_id, subgoal_id)
 );
--- 기타(null)는 PK에 못 들어가므로 따로 하나만 허용
-create unique index entry_shares_one_other on entry_shares(entry_id) where subgoal_id is null;
 
 -- 계획 변경 이력. 화면에는 안 보임(제안). 바뀐 전후를 json으로 한 줄.
 create table plan_changes (
