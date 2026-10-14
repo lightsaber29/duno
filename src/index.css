@@ -11,6 +11,7 @@
   --on-color: #16131f;
   --prev: #b9b4c6;
   --danger: #d8323c;
+  --radius: 16px; /* 면(카드·입력·띠)은 16, 조작부(버튼·칩·토글·막대)는 알약, 점은 원 */
   --font: 'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
   --font-num: 'Gothic A1', 'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', sans-serif;
   color-scheme: light;
@@ -146,7 +147,7 @@ small,
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius);
 }
 
 /* 버튼·입력 */
@@ -181,7 +182,7 @@ button:disabled {
   justify-content: center;
   padding: 16px 24px;
   border: 1px dashed var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius);
   text-align: center;
 }
 footer.row {
@@ -212,7 +213,7 @@ input[type='date'] {
   height: 48px;
   padding: 0 16px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius);
   background: var(--surface);
   font-size: 15px;
 }
@@ -363,7 +364,7 @@ input[type='date'] {
   width: 72px;
   height: 44px;
   padding: 0 12px;
-  border-radius: 6px;
+  border-radius: 999px;
   background: var(--soft);
   font-size: 15px;
   font-weight: 500;
@@ -477,7 +478,7 @@ input[type='date'] {
   display: flex;
   gap: 2px;
   height: 54px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   overflow: hidden;
 }
 .band span {
@@ -544,13 +545,13 @@ input[type='date'] {
 .hbars .track {
   height: 14px;
   background: var(--soft);
-  border-radius: 7px;
+  border-radius: 999px;
   overflow: hidden;
 }
 .hbars .fill {
   display: block;
   height: 100%;
-  border-radius: 7px;
+  border-radius: 999px;
 }
 .hbars .sub {
   text-align: right;
@@ -644,7 +645,7 @@ input[type='date'] {
   margin-top: 24px;
   padding: 12px 16px;
   border: 1px dashed var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius);
 }
 .test-tools summary {
   cursor: pointer;
