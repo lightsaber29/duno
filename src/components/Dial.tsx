@@ -38,7 +38,7 @@ function arcPath(from: number, to: number) {
  * 원형 다이얼(7-1). 조각을 누르면 골라지고 고른 조각의 끝 경계에 손잡이가 생긴다(마지막 조각은 시작 경계).
  * 손잡이를 끌면 경계 양쪽 두 조각만 바뀐다.
  */
-export function Dial({ slices, selected, onSelect, onDrag, center, centerSub, size = 320 }: Props) {
+export function Dial({ slices, selected, onSelect, onDrag, center, centerSub, size = 260 }: Props) {
   const svg = useRef<SVGSVGElement>(null)
   const drag = useRef<{ ratios: number[]; angle: number } | null>(null)
 
@@ -93,11 +93,11 @@ export function Dial({ slices, selected, onSelect, onDrag, center, centerSub, si
             key={s.key}
             d={arcPath(starts[i] / 100, (starts[i] + s.ratio) / 100)}
             fill={s.color}
-            stroke="var(--bg)"
-            strokeWidth={1.5}
+            stroke={on ? 'var(--fg)' : 'var(--bg)'}
+            strokeWidth={on ? 2.5 : 1.5}
             strokeLinejoin="round"
             transform={`translate(${px} ${py})`}
-            style={{ cursor: 'pointer', filter: on ? `drop-shadow(0 0 7px ${s.color})` : undefined }}
+            style={{ cursor: 'pointer' }}
             onClick={() => onSelect(on ? null : s.key)}
           />
         )
@@ -119,7 +119,8 @@ export function Dial({ slices, selected, onSelect, onDrag, center, centerSub, si
           style={{ cursor: 'grab' }}
         >
           <circle r={HANDLE_R} fill="transparent" />
-          <circle r={9} fill="var(--surface)" stroke="var(--fg)" strokeWidth={2} />
+          <circle r={11} fill="var(--surface)" stroke="var(--fg)" strokeWidth={2.5} />
+          <circle r={4} fill={sel?.color} />
         </g>
       )}
     </svg>
