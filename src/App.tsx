@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useSession } from './auth/useSession'
 import { Login } from './auth/Login'
 import { supabase } from './lib/supabase'
-import { archivePlan, createPlan, loadPlan, logStatusView, saveEntry, updatePlan, type PlanData, type PlanInput, type Share } from './lib/db'
+import { archivePlan, createPlan, deleteAllEntries, deleteEntry, loadPlan, logStatusView, saveEntry, seedEntries, updatePlan, type PlanData, type PlanInput, type Share } from './lib/db'
 import { Setup } from './screens/Setup'
 import { Write } from './screens/Write'
 import { Status } from './screens/Status'
@@ -74,6 +74,13 @@ export default function App() {
       <Write
         data={data}
         onClose={() => setScreen('status')}
+        onDelete={(date) => {
+          if (!window.confirm(`${date} 기록을 지울까요?`)) return
+          run(deleteEntry(data.plan.id, date), () => {
+            show('지웠어요')
+            setScreen('status')
+          })
+        }}
         onSave={(date, minutes, shares: Share[]) =>
           run(saveEntry(data.plan.id, date, minutes, shares), () => {
             show(minutes === null ? '휴식으로 기록했어요' : '기록했어요')
@@ -83,7 +90,18 @@ export default function App() {
       />
     )
   } else if (screen === 'plan') {
-    body = <Plan data={data} onEdit={() => setScreen('edit')} />
+    const d = data
+    body = (
+      <Plan
+        data={d}
+        onEdit={() => setScreen('edit')}
+        onSeed={() => run(seedEntries(d.plan.id, d.subgoals.filter((s) => !s.removed_at).map((s) => s.id)), () => show('예시 데이터를 넣었어요'))}
+        onClearAll={() => {
+          if (!window.confirm('이 계획의 기록을 전부 지울까요? 되돌릴 수 없어요.')) return
+          run(deleteAllEntries(d.plan.id), () => show('기록을 전부 지웠어요'))
+        }}
+      />
+    )
   } else {
     body = <Status data={data} onWrite={() => setScreen('write')} onView={onView} />
   }

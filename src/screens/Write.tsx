@@ -10,14 +10,17 @@ const OTHER = 'other'
 type Props = {
   data: PlanData
   onSave: (date: string, minutes: number | null, shares: Share[]) => void
+  onDelete: (date: string) => void
   onClose: () => void
 }
 
 /** 작성 화면(3절). 오늘/어제, 쓴 시간, 세부 목표 칩 + 기타, 다이얼, 저장/휴식. */
-export function Write({ data, onSave, onClose }: Props) {
+export function Write({ data, onSave, onDelete, onClose }: Props) {
   const active = data.subgoals.filter((s) => !s.removed_at)
-  const [day, setDay] = useState<'today' | 'yesterday'>('today')
-  const date = localDate(day === 'today' ? 0 : -1)
+  const today = localDate(0)
+  const yesterday = localDate(-1)
+  const [date, setDate] = useState(today) // 오늘·어제 외의 날도 고를 수 있다(테스트·누적 입력용. 결정 2-3 확장)
+  const dayLabel = date === today ? '오늘' : date === yesterday ? '어제' : date
   const existing = useMemo(() => data.entries.find((e) => e.date === date), [data.entries, date])
 
   const [state, setState] = useState(() => fromEntry(existing, active.map((s) => s.id)))
@@ -55,13 +58,13 @@ export function Write({ data, onSave, onClose }: Props) {
 
   return (
     <main className="screen">
-      <h1>{day === 'today' ? '오늘' : '어제'}, 목표에 얼마나 썼나요?</h1>
+      <h1>{dayLabel}, 목표에 얼마나 썼나요?</h1>
       <div className="row">
         <div className="seg">
-          <button type="button" className={day === 'today' ? 'on' : ''} onClick={() => setDay('today')}>오늘</button>
-          <button type="button" className={day === 'yesterday' ? 'on' : ''} onClick={() => setDay('yesterday')}>어제</button>
+          <button type="button" className={date === today ? 'on' : ''} onClick={() => setDate(today)}>오늘</button>
+          <button type="button" className={date === yesterday ? 'on' : ''} onClick={() => setDate(yesterday)}>어제</button>
         </div>
-        <small>{date}</small>
+        <input type="date" value={date} max={today} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label="날짜" />
       </div>
 
       {existing?.minutes === null && <p className="hint">휴식으로 기록한 날이에요. 다시 적으면 바뀝니다.</p>}
@@ -98,6 +101,7 @@ export function Write({ data, onSave, onClose }: Props) {
 
       <footer className="row">
         <button type="button" onClick={onClose}>닫기</button>
+        {existing && <button type="button" className="danger" onClick={() => onDelete(date)}>이 기록 지우기</button>}
         <button type="button" onClick={() => onSave(date, null, [])}>휴식</button>
         <button type="button" className="primary" disabled={!canSave} onClick={() => onSave(date, minutes, keys.map((k, i) => ({ subgoal_id: k === OTHER ? null : k, ratio: ratios[i] })))}>
           저장
