@@ -119,7 +119,7 @@ export function Dial({ slices, selected, onSelect, onDrag, center, centerSub, si
           style={{ cursor: 'grab' }}
         >
           <circle r={HANDLE_R} fill="transparent" />
-          <circle r={9} fill="#fff" stroke="var(--fg)" strokeWidth={2} />
+          <circle r={9} fill="var(--surface)" stroke="var(--fg)" strokeWidth={2} />
         </g>
       )}
     </svg>

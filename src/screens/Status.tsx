@@ -5,7 +5,7 @@ import { actualRatios, totalMinutes } from '../lib/ratio'
 import { fmtDiff, fmtMinutes, localDate } from '../lib/format'
 import type { PlanData } from '../lib/db'
 
-const PREV_COLOR = '#b9b4c6'
+const PREV_COLOR = 'var(--prev)'
 
 type Props = { data: PlanData; onWrite: () => void; onView: () => void }
 
