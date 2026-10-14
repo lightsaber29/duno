@@ -14,7 +14,7 @@ type Props = {
   onClose: () => void
 }
 
-/** 작성 화면(3절). 오늘/어제, 쓴 시간, 세부 목표 칩 + 기타, 다이얼, 저장/휴식. */
+/** 작성 화면(3절). 오늘/어제, 쓴 시간, 세부 목표 칩 + 기타, 다이얼, 저장. 쓴 시간 0분 = 휴식. */
 export function Write({ data, onSave, onDelete, onClose }: Props) {
   const active = data.subgoals.filter((s) => !s.removed_at)
   const today = localDate(0)
@@ -53,7 +53,8 @@ export function Write({ data, onSave, onDelete, onClose }: Props) {
     const idx = active.findIndex((s) => s.id === k)
     return { key: k, name: k === OTHER ? '기타' : active[idx].name, ratio: ratios[i], color: k === OTHER ? OTHER_COLOR : COLORS[idx] }
   })
-  const canSave = minutes >= 30 && keys.length > 0
+  const rest = minutes === 0 // 0분 = 휴식
+  const canSave = rest || keys.length > 0
 
   return (
     <main className="screen">
@@ -70,52 +71,57 @@ export function Write({ data, onSave, onDelete, onClose }: Props) {
         </label>
       </div>
 
-      {existing?.minutes === null && <p className="hint">휴식으로 기록한 날이야. 다시 적으면 바뀌어.</p>}
+      {existing?.minutes === null && <p className="hint">휴식으로 기록한 날이야. 시간을 올리면 바뀌어.</p>}
       {lostShares && <p className="hint">이 기록에는 지금은 없는 세부 목표의 몫이 있어. 저장하면 그 몫은 사라져.</p>}
 
       <div className="stack">
         <span className="label" id="spent">쓴 시간</span>
         <div className="row stepper" role="group" aria-labelledby="spent">
-          <button type="button" aria-label="30분 줄이기" onClick={() => setState({ ...state, minutes: Math.max(30, minutes - 30) })} disabled={minutes <= 30}>−</button>
+          <button type="button" aria-label="30분 줄이기" onClick={() => setState({ ...state, minutes: Math.max(0, minutes - 30) })} disabled={minutes <= 0}>−</button>
           <strong>{fmtMinutes(minutes)}</strong>
           <button type="button" aria-label="30분 늘리기" onClick={() => setState({ ...state, minutes: Math.min(1440, minutes + 30) })} disabled={minutes >= 1440}>+</button>
         </div>
       </div>
 
-      <div className="stack">
-        <span className="label">어디에 나눠 썼어? 여러 개 골라도 돼</span>
-        <div className="chips" role="group" aria-label="어디에 나눠 썼어?">
-          {active.map((s, i) => (
-            <button key={s.id} type="button" className={keys.includes(s.id) ? 'chip on' : 'chip'} aria-pressed={keys.includes(s.id)} onClick={() => toggle(s.id)}>
-              <span className="dot" style={{ background: COLORS[i] }} />
-              {s.name}
-            </button>
-          ))}
-          <button type="button" className={keys.includes(OTHER) ? 'chip on' : 'chip'} aria-pressed={keys.includes(OTHER)} onClick={() => toggle(OTHER)}>
-            <span className="dot" style={{ background: OTHER_COLOR }} />
-            기타
-          </button>
-        </div>
-      </div>
-
-      {slices.length > 0 ? (
-        <RatioEditor
-          key={keys.join(',')}
-          slices={slices}
-          onChange={(r) => setState({ ...state, ratios: r })}
-          center={fmtMinutes(minutes)}
-          sub={(s) => `${(minutes * s.ratio) % 100 ? '약 ' : ''}${fmtMinutes(shareMinutes(minutes, s.ratio))}`}
-          total={fmtMinutes(minutes)}
-        />
+      {rest ? (
+        <p className="hint">0분이면 쉰 날로 기록할게.</p>
       ) : (
-        <p className="hint">오늘 손댄 세부 목표를 눌러 줘.</p>
+        <>
+          <div className="stack">
+            <span className="label">어디에 나눠 썼어? 여러 개 골라도 돼</span>
+            <div className="chips" role="group" aria-label="어디에 나눠 썼어?">
+              {active.map((s, i) => (
+                <button key={s.id} type="button" className={keys.includes(s.id) ? 'chip on' : 'chip'} aria-pressed={keys.includes(s.id)} onClick={() => toggle(s.id)}>
+                  <span className="dot" style={{ background: COLORS[i] }} />
+                  {s.name}
+                </button>
+              ))}
+              <button type="button" className={keys.includes(OTHER) ? 'chip on' : 'chip'} aria-pressed={keys.includes(OTHER)} onClick={() => toggle(OTHER)}>
+                <span className="dot" style={{ background: OTHER_COLOR }} />
+                기타
+              </button>
+            </div>
+          </div>
+
+          {slices.length > 0 ? (
+            <RatioEditor
+              key={keys.join(',')}
+              slices={slices}
+              onChange={(r) => setState({ ...state, ratios: r })}
+              center={fmtMinutes(minutes)}
+              sub={(s) => `${(minutes * s.ratio) % 100 ? '약 ' : ''}${fmtMinutes(shareMinutes(minutes, s.ratio))}`}
+              total={fmtMinutes(minutes)}
+            />
+          ) : (
+            <p className="hint">오늘 손댄 세부 목표를 눌러 줘.</p>
+          )}
+        </>
       )}
 
       <footer className="row">
-        <button type="button" className="primary" disabled={!canSave} onClick={() => onSave(date, minutes, keys.map((k, i) => ({ subgoal_id: k === OTHER ? null : k, ratio: ratios[i] })))}>
-          저장
+        <button type="button" className="primary" disabled={!canSave} onClick={() => (rest ? onSave(date, null, []) : onSave(date, minutes, keys.map((k, i) => ({ subgoal_id: k === OTHER ? null : k, ratio: ratios[i] }))))}>
+          {rest ? '휴식으로 저장' : '저장'}
         </button>
-        <button type="button" onClick={() => onSave(date, null, [])}>휴식</button>
       </footer>
       <div className="row" style={{ justifyContent: 'center', gap: 20 }}>
         <button type="button" className="link" onClick={onClose}>닫기</button>
@@ -127,7 +133,8 @@ export function Write({ data, onSave, onDelete, onClose }: Props) {
 
 /** 이미 적은 날이면 값을 채운다. 지금 없는 세부 목표의 몫은 빼고 나머지를 100으로 맞춘다. */
 function fromEntry(e: Entry | undefined, activeIds: string[]) {
-  if (!e || e.minutes === null) return { minutes: 30, keys: [] as string[], ratios: [] as number[] }
+  if (!e) return { minutes: 30, keys: [] as string[], ratios: [] as number[] }
+  if (e.minutes === null) return { minutes: 0, keys: [] as string[], ratios: [] as number[] }
   const kept = activeIds.map((id) => e.shares.find((s) => s.subgoal_id === id)).filter((s): s is Share => !!s)
   const other = e.shares.find((s) => s.subgoal_id === null)
   const shares = other ? [...kept, other] : kept
