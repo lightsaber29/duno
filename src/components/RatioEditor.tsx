@@ -8,13 +8,15 @@ type Props = {
   center?: string
   /** 조각마다 보조 글(예: "약 54분"). 다이얼 가운데와 목록 줄에 같이 쓴다 */
   sub?: (s: Slice) => string
+  /** 합계 옆 글(예: "3시간") */
+  total?: string
 }
 
 /**
  * 다이얼 + 목록(색 점·이름·% 숫자 칸) + 균등 배분 + 바뀐 내용 안내.
  * 목표 설정 ③과 작성 화면이 같이 쓴다(7절).
  */
-export function RatioEditor({ slices, onChange, center, sub }: Props) {
+export function RatioEditor({ slices, onChange, center, sub, total }: Props) {
   const [selected, setSelected] = useState<string | null>(slices[0]?.key ?? null)
   const [note, setNote] = useState('')
   const ratios = slices.map((s) => s.ratio)
@@ -30,19 +32,22 @@ export function RatioEditor({ slices, onChange, center, sub }: Props) {
     <div className="ratio-editor">
       <Dial slices={slices} selected={selected} onSelect={setSelected} onDrag={apply} center={center} centerSub={sub} />
       <p className="dial-note">{note || ' '}</p>
-      <ul className="ratio-list">
+      <ul className="list card">
         {slices.map((s, i) => (
           <li key={s.key} className={selected === s.key ? 'selected' : ''} onClick={() => setSelected(selected === s.key ? null : s.key)}>
             <span className="dot" style={{ background: s.color }} />
             <span className="name">{s.name}</span>
-            {sub && <span className="sub">{sub(s)}</span>}
             <RatioInput value={s.ratio} onCommit={(v) => apply(setByInput(ratios, i, v))} />
+            {sub && <span className="sub min">{sub(s)}</span>}
           </li>
         ))}
       </ul>
-      <button type="button" disabled={slices.length < 2} onClick={() => apply(equalSplit(slices.length))}>
-        균등 배분
-      </button>
+      <div className="ratio-foot">
+        <button type="button" disabled={slices.length < 2} onClick={() => apply(equalSplit(slices.length))}>
+          균등 배분
+        </button>
+        <span>합계 <b>100%</b>{total && ` · ${total}`}</span>
+      </div>
     </div>
   )
 }

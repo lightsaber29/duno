@@ -18,6 +18,8 @@ type Props = {
 
 const R = 100 // viewBox 반지름
 const HANDLE_R = 22 // 누름 범위 44px(확인할 것)
+const HOLE = 0.63 // 도넛 구멍. 시안 88/140
+const POP = 5 // 고른 조각을 바깥으로 밀어내는 거리
 
 /** 12시 시작, 시계 방향. t는 0~1 */
 function polar(t: number, r = R) {
@@ -83,26 +85,29 @@ export function Dial({ slices, selected, onSelect, onDrag, center, centerSub, si
       height={size}
       style={{ touchAction: 'none', display: 'block', margin: '0 auto', userSelect: 'none' }}
     >
-      {slices.map((s, i) => (
-        <path
-          key={s.key}
-          d={arcPath(starts[i] / 100, (starts[i] + s.ratio) / 100)}
-          fill={s.color}
-          opacity={selected === null || selected === s.key ? 1 : 0.5}
-          stroke="var(--bg)"
-          strokeWidth={1.5}
-          onClick={() => onSelect(selected === s.key ? null : s.key)}
-          style={{ cursor: 'pointer' }}
-        />
-      ))}
-      <circle r={R * 0.55} fill="var(--bg)" />
-      <text textAnchor="middle" y={sel ? -4 : 6} fontSize={14} fill="currentColor">
+      {slices.map((s, i) => {
+        const on = selected === s.key
+        const [px, py] = on ? polar((starts[i] + s.ratio / 2) / 100, POP) : [0, 0]
+        return (
+          <path
+            key={s.key}
+            d={arcPath(starts[i] / 100, (starts[i] + s.ratio) / 100)}
+            fill={s.color}
+            stroke={on ? 'var(--fg)' : 'var(--bg)'}
+            strokeWidth={on ? 2.5 : 1.5}
+            strokeLinejoin="round"
+            transform={`translate(${px} ${py})`}
+            style={{ cursor: 'pointer' }}
+            onClick={() => onSelect(on ? null : s.key)}
+          />
+        )
+      })}
+      <circle r={R * HOLE} fill="var(--bg)" />
+      <text textAnchor="middle" y={sel ? -14 : 5} fontSize={14} fontWeight={500} fill="currentColor">
         {sel ? sel.name : center}
       </text>
       {sel && (
-        <text textAnchor="middle" y={16} fontSize={13} fill="currentColor" opacity={0.7}>
-          {centerSub ? centerSub(sel) : `${sel.ratio}%`}
-        </text>
+        <CenterNum text={centerSub ? centerSub(sel) : `${sel.ratio}%`} />
       )}
       {handleAt !== null && n > 1 && (
         <g
@@ -114,9 +119,20 @@ export function Dial({ slices, selected, onSelect, onDrag, center, centerSub, si
           style={{ cursor: 'grab' }}
         >
           <circle r={HANDLE_R} fill="transparent" />
-          <circle r={9} fill="var(--bg)" stroke="currentColor" strokeWidth={2.5} />
+          <circle r={11} fill="var(--surface)" stroke="var(--fg)" strokeWidth={2.5} />
+          <circle r={4} fill={sel?.color} />
         </g>
       )}
     </svg>
+  )
+}
+
+/** 가운데 큰 숫자. "25%"는 크게, "1시간 48분"처럼 길면 작게 */
+function CenterNum({ text }: { text: string }) {
+  const long = text.length > 4
+  return (
+    <text textAnchor="middle" y={long ? 10 : 16} fontSize={long ? 17 : 28} fontWeight={800} fontFamily="var(--font-num)" fill="currentColor">
+      {text}
+    </text>
   )
 }

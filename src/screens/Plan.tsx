@@ -1,5 +1,6 @@
 import { Dial } from '../components/Dial'
 import { COLORS } from '../lib/colors'
+import { fmtTime } from '../lib/format'
 import type { PlanData } from '../lib/db'
 
 type Props = { data: PlanData; onEdit: () => void; onSeed: () => void; onClearAll: () => void }
@@ -10,20 +11,29 @@ export function Plan({ data, onEdit, onSeed, onClearAll }: Props) {
   const slices = active.map((s, i) => ({ key: s.id, name: s.name, ratio: s.ratio, color: COLORS[i] }))
   return (
     <main className="screen">
-      <h1>{data.plan.goal}</h1>
-      <Dial slices={slices} selected={null} onSelect={() => {}} onDrag={() => {}} size={160} />
-      <ul className="ratio-list">
-        {slices.map((s) => (
-          <li key={s.key}>
-            <span className="dot" style={{ background: s.color }} />
-            <span className="name">{s.name}</span>
-            <span className="sub">{s.ratio}%</span>
-          </li>
-        ))}
-      </ul>
-      <p className="hint">알림 시간 {data.plan.notify_at}</p>
+      <h1>내 계획</h1>
+      <div className="stack" style={{ gap: 4 }}>
+        <span className="label">핵심 목표</span>
+        <p style={{ margin: 0, fontSize: 18, fontWeight: 700, lineHeight: 1.4 }}>{data.plan.goal}</p>
+      </div>
+      <div className="plan-row">
+        <Dial slices={slices} selected={null} onSelect={() => {}} onDrag={() => {}} size={160} />
+        <ul className="list">
+          {slices.map((s) => (
+            <li key={s.key}>
+              <span className="dot" style={{ background: s.color }} />
+              <span className="name">{s.name}</span>
+              <b style={{ fontSize: 15, fontVariantNumeric: 'tabular-nums' }}>{s.ratio}%</b>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="notice card">
+        <span>기록 알림</span>
+        <span className="num">{fmtTime(data.plan.notify_at)}</span>
+      </div>
       <footer className="row">
-        <button type="button" className="primary" onClick={onEdit}>고치기</button>
+        <button type="button" className="primary" onClick={onEdit}>계획 다시 정하기</button>
       </footer>
       <details className="test-tools">
         <summary>테스트 도구</summary>
