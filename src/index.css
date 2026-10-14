@@ -422,9 +422,10 @@ input[type='date'] {
   color: var(--muted);
 }
 .seg button.on {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--surface);
+  color: var(--fg);
   font-weight: 700;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
 }
 .stepper {
   gap: 8px;
