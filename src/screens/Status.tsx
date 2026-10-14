@@ -49,16 +49,15 @@ export function Status({ data, onWrite, onView }: Props) {
         <span className="label">핵심 목표</span>
         <h1 style={{ fontSize: 20 }}>{data.plan.goal}</h1>
       </div>
-      <div className="stack">
+      <div className="row">
         <div className="seg" role="group" aria-label="기간">
           <button type="button" className={period === 'week' ? 'on' : ''} onClick={() => setPeriod('week')}>최근 1주</button>
           <button type="button" className={period === 'all' ? 'on' : ''} onClick={() => setPeriod('all')}>총 시간</button>
         </div>
         {period === 'week' && (
-          <div className="seg" role="group" aria-label="그래프 모양">
-            <button type="button" className={chart === 'bar' ? 'on' : ''} onClick={() => setChart('bar')}>띠그래프</button>
-            <button type="button" className={chart === 'pie' ? 'on' : ''} onClick={() => setChart('pie')}>원그래프</button>
-          </div>
+          <button type="button" className="link" style={{ marginLeft: 'auto' }} onClick={() => setChart(chart === 'bar' ? 'pie' : 'bar')}>
+            {chart === 'bar' ? '원그래프로 보기' : '띠그래프로 보기'}
+          </button>
         )}
       </div>
 
