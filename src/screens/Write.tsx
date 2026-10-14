@@ -113,7 +113,7 @@ export function Write({ data, onSave, onDelete, onClose }: Props) {
               total={fmtMinutes(minutes)}
             />
           ) : (
-            <p className="hint">오늘 손댄 세부 목표를 눌러 줘.</p>
+            <div className="empty"><p className="hint">세부 목표를 고르면 여기서 시간을 나눌 수 있어.<br />여러 개 고르면 다이얼로 비율을 끌어서 정해.</p></div>
           )}
         </>
       )}
