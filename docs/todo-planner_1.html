@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>날짜별 투두 앱 — 주간 목표 형태와 글자 크기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#e9edf3; --bg:#f5f7fa; --surface:#fff; --ink:#1b2230; --muted:#667085; --line:#dde2ea; --frame:#1d2330;
+  --accent:#2f54eb; --soft:#e6ebff; --done:#98a2b3; --warn:#fff4dc; --warn-ink:#8a5a00; --ok:#0e9f6e; --ok-soft:#dcf5ea;
+  --c0:#2f54eb; --c1:#0e9f6e; --c2:#e8590c; --s0:#e6ebff; --s1:#dcf5ea; --s2:#fde8da;
+  --gsize:17px;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --page:#0b0e13; --bg:#12161d; --surface:#1a1f29; --ink:#e8ecf3; --muted:#9aa4b5; --line:#2b3240; --frame:#000;
+  --accent:#7b96ff; --soft:#222c52; --done:#6b7588; --warn:#3a2e14; --warn-ink:#f5c46a; --ok:#5fdcaa; --ok-soft:#163a2c;
+  --c0:#9bb0ff; --c1:#5fdcaa; --c2:#ffa06a; --s0:#222c52; --s1:#163a2c; --s2:#47281a;}}
+:root[data-theme="dark"]{
+  --page:#0b0e13; --bg:#12161d; --surface:#1a1f29; --ink:#e8ecf3; --muted:#9aa4b5; --line:#2b3240; --frame:#000;
+  --accent:#7b96ff; --soft:#222c52; --done:#6b7588; --warn:#3a2e14; --warn-ink:#f5c46a; --ok:#5fdcaa; --ok-soft:#163a2c;
+  --c0:#9bb0ff; --c1:#5fdcaa; --c2:#ffa06a; --s0:#222c52; --s1:#163a2c; --s2:#47281a;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo',sans-serif;font-size:15px;line-height:1.5}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:22px;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 12px}
+.conclusion{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:12px 16px;margin-bottom:16px}
+.conclusion b{display:block}
+.ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 6px}
+.ctrl span{font-weight:700;font-size:14px}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{border:0;background:none;border-radius:7px;padding:5px 12px;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.hint{font-size:13px;color:var(--muted);margin:0 0 10px}
+.row-phones{display:flex;gap:20px;overflow-x:auto;padding:8px 2px 14px}
+.ph-col{flex:none;width:300px;display:flex;flex-direction:column;gap:6px}
+.ph-col h3{font-size:15px;margin:0}
+.ph-col p{margin:0;font-size:13px;color:var(--muted);min-height:40px}
+.rec{font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 5px;margin-left:6px;font-weight:500}
+
+/* phone */
+.phone{width:300px;height:620px;border:8px solid var(--frame);border-radius:38px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;flex:none}
+.p-week{background:var(--surface);border-bottom:1px solid var(--line);padding:24px 10px 8px}
+.wk-h{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:700;color:var(--ink);margin:0 -10px;padding:0 10px 8px;border-bottom:1px solid var(--line);gap:6px}
+.wk-h button{border:0;background:none;color:var(--muted);padding:0 6px;font-size:15px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dbtn{border:0;background:none;border-radius:10px;padding:4px 0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted)}
+.dbtn[aria-pressed="true"]{background:var(--soft)}
+.dbtn.today{color:var(--accent);font-weight:700}
+.ring{width:26px;height:26px;border-radius:50%;display:grid;place-items:center}
+.ring span{width:20px;height:20px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink)}
+
+/* weekly goal variants */
+.goal-t{font-size:var(--gsize);font-weight:700;line-height:1.35;word-break:keep-all;overflow-wrap:anywhere}
+.goal-t.ph{color:var(--done);font-weight:500}
+.goal-edit{width:100%;border:1px solid var(--accent);border-radius:8px;padding:4px 8px;font-size:var(--gsize);font-weight:700;background:var(--bg)}
+.gA{padding:10px 4px 10px}
+.gA small{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:1px}
+.gB{background:var(--soft);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.gB small{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:2px}
+.gB .gbar{height:5px;background:color-mix(in srgb,var(--accent) 18%,transparent);border-radius:3px;margin-top:8px;overflow:hidden}
+.gB .gbar i{display:block;height:100%;background:var(--accent)}
+.gC{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 12px;margin-bottom:10px}
+.gC .goal-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:calc(var(--gsize) - 2px)}
+.gC .goal-edit{font-size:calc(var(--gsize) - 2px);padding:2px 6px}
+.gtap{all:unset;cursor:text;display:block;width:100%}
+.gtap:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.badge{font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;white-space:nowrap;flex:none}
+.badge.live{background:var(--soft);color:var(--accent)}
+.gB .badge.live{background:var(--surface)}
+.badge.final{background:var(--ok-soft);color:var(--ok)}
+.badge.wait{background:var(--line);color:var(--muted)}
+
+.p-day{flex:1;overflow:auto;padding:10px 12px}
+.p-day h4{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:500}
+.task{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:14px}
+.task input{width:18px;height:18px;margin:0;accent-color:var(--accent);flex:none}
+.task .t{flex:1;min-width:0}
+.task.done .t{color:var(--done);text-decoration:line-through}
+.chip{font-size:11px;font-weight:500;padding:1px 8px;border-radius:999px;white-space:nowrap;flex:none}
+.task.done .chip{opacity:.5}
+.banner{background:var(--warn);color:var(--warn-ink);border-radius:10px;padding:8px 10px;font-size:13px;margin-bottom:8px}
+.banner div{display:flex;gap:6px;margin-top:6px}
+.banner button{border:0;border-radius:6px;padding:3px 10px;font-size:12px;background:var(--surface);color:var(--ink)}
+.banner button.go{background:var(--accent);color:#fff}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:20px 0}
+.p-add{background:var(--surface);border-top:1px solid var(--line);padding:8px 10px 14px}
+.picks{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.pick{border:1.5px solid transparent;border-radius:999px;padding:1px 10px;font-size:12px}
+.pick[aria-pressed="true"]{border-color:currentColor;font-weight:700}
+.pick.plus{background:none;border:1px dashed var(--line);color:var(--muted)}
+.gtoggle{margin-left:auto;border:1px solid var(--line);background:none;border-radius:999px;padding:1px 10px;font-size:12px;color:var(--muted)}
+.gtoggle[aria-pressed="true"]{background:var(--soft);color:var(--accent);border-color:var(--accent);font-weight:700}
+.gmark{font-size:10px;font-weight:700;color:var(--accent);background:var(--soft);border-radius:4px;padding:0 4px;margin-right:5px;vertical-align:1px}
+.task.done .gmark{opacity:.6}
+.addrow{display:flex;gap:6px}
+.addrow input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 9px;font-size:14px}
+.addrow button{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:0 12px;font-size:14px}
+.close{flex:1;overflow:auto;padding:26px 14px 14px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.c-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+.c-top button{border:0;background:none;color:var(--muted);font-size:13px;padding:0}
+.c-goal{font-size:17px;font-weight:700;line-height:1.35}
+.c-big{display:flex;align-items:baseline;gap:8px}
+.c-big b{font-size:34px;color:var(--accent)}
+.c-big span{font-size:13px;color:var(--muted)}
+.c-note{margin:0;font-size:12px;color:var(--muted)}
+.c-f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:500}
+.c-f em{font-style:normal;color:var(--muted);font-weight:400}
+.c-f input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;font-size:14px;font-weight:400}
+.c-f input.c-goalin{font-size:17px;font-weight:700}
+.c-prev{background:var(--bg);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--muted)}
+.c-sub{font-size:13px;font-weight:700;margin-top:4px}
+.c-chk{display:flex;gap:8px;align-items:center;font-size:14px}
+.c-chk input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+.c-main{margin-top:auto;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 0;font-weight:700}
+.c-main.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pill{border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:999px;padding:6px 14px;font-size:14px}
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-top:8px}
+.notes h3{margin:0 0 6px;font-size:15px}
+.notes ul{margin:0;padding-left:18px}
+.notes li{margin:3px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>주간 목표 — 확정안</h1>
+  <p class="lead">화면 형태는 고정했어요: 상하 분할 · 날짜별 달성 링 · 못한 일은 가져올지 물어보기</p>
+  <div class="conclusion"><b>확정: 텍스트 한 줄 · 17px · 상단바 아래</b>주 범위가 적힌 상단바 바로 아래에 그 주의 목표가 들어가요. 진행 상태는 오른쪽 작은 배지로 보여요.</div>
+
+  <p class="hint">목표 문장을 누르면 바로 고칠 수 있어요. 주간 줄의 ‹ 를 눌러 지난주로 가면, 기간이 끝난 주의 완료율이 기록된 모습을 볼 수 있어요.</p>
+  <p><button class="pill" data-a="closeOpen" data-p="A">주간 마감 흐름 미리보기</button> <span class="hint">실제로는 주가 끝난 뒤 앱을 처음 열 때 떠요.</span></p>
+
+  <div class="row-phones" id="phones"></div>
+
+  <div class="notes">
+    <h3>주간 목표 규칙 (세 형태 공통)</h3>
+    <ul>
+      <li><b>이번 주</b>: "진행 중 n%" 배지가 할 일을 체크할 때마다 바뀌어요.</li>
+      <li><b>지난주</b>: 일요일이 지나면 그 주 완료율이 "완료율 n% 기록"으로 고정돼요.</li>
+      <li><b>다음 주</b>: 목표가 비어 있으면 "목표를 적어 보세요"가 보여요.</li>
+      <li><b>완료율 기준</b>: 그 주 할 일 전체 중 체크한 비율이에요.</li>
+      <li><b>주 시작</b>: 월요일이에요. 월~일 한 주가 끝나면 완료율이 기록돼요.</li>
+      <li>목표 문장은 30자 이내를 권장해요. 17px 기준 두 줄을 넘지 않는 길이예요.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const LABELS=[{id:'l1',name:'리서치',c:0},{id:'l2',name:'제작',c:1},{id:'l3',name:'회고',c:2}];
+const WD=['일','월','화','수','목','금','토'];
+const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const parse=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
+const addD=(k,n)=>{const d=parse(k);d.setDate(d.getDate()+n);return key(d)};
+const wStart=k=>{const d=parse(k);d.setDate(d.getDate()-((d.getDay()+6)%7));return key(d)};
+const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TODAY=key(new Date()), THIS_W=wStart(TODAY);
+let n=0;const uid=()=>'t'+(++n);
+
+const POOL=[['레퍼런스 3개 찾기','l1'],['문제 정의 한 문장 쓰기','l2'],['오늘 한 일 3줄 회고','l3'],['인터뷰 질문 정리','l1'],['와이어프레임 1장','l2'],['받은 피드백 정리','l3'],['케이스 스터디 목차','l2'],['경쟁 서비스 화면 캡처','l1']];
+const DATA={};
+const GOALS={};
+GOALS[addD(THIS_W,-7)]='인터뷰 5명 진행하고 핵심 문제 3개 뽑기';
+GOALS[THIS_W]='와이어프레임 핵심 화면 3장 완성하기';
+(function seed(){
+  let p=0;
+  for(let i=-7;i<7;i++){
+    const k=addD(THIS_W,i),diff=Math.round((parse(k)-parse(TODAY))/864e5);
+    const cnt=diff<=0?(i<0?2:3):(i%2?2:1);DATA[k]=[];
+    for(let j=0;j<cnt;j++){const [t,l]=POOL[p++%POOL.length];
+      let done=diff<0;if(i<0&&(i+j)%3===0)done=false;if(diff===-1&&j>0)done=false;if(diff===0)done=j===0;
+      DATA[k].push({id:uid(),text:t,l,done,goal:j!==2});}
+  }
+})();
+const day=k=>DATA[k]||(DATA[k]=[]);
+const REG={};LABELS.forEach(l=>REG[l.id]=l);
+const LAB={};
+function labelsFor(k){if(LAB[k])return LAB[k];for(let i=1;i<=60;i++){const p=addD(k,-i);if(LAB[p])return LAB[k]=LAB[p].slice()}return LAB[k]=LABELS.map(l=>l.id)}
+const lab=id=>REG[id];
+const st=c=>`background:var(--s${c});color:var(--c${c})`;
+
+const VARIANTS=[
+  {id:'A',name:'확정 화면',desc:'상단바(주 범위) → 주간 목표 → 날짜별 달성 링 → 일간 목록'},
+];
+const SIZES=[[15,'작게 15'],[17,'보통 17'],[20,'크게 20']];
+let SIZE=17;
+const PS={};
+const ps=id=>PS[id]||(PS[id]={sel:TODAY,ws:THIS_W,pick:'l1',dismiss:{},editing:false,goal:true,newLab:false});
+
+function weekStat(ws){const t=[...Array(7)].flatMap((_,i)=>day(addD(ws,i)));const d=t.filter(x=>x.done).length;return {total:t.length,done:d,pct:t.length?Math.round(d/t.length*100):0}}
+function badge(ws){
+  const s=weekStat(ws);
+  if(ws<THIS_W)return `<span class="badge final">완료율 ${s.pct}% 기록</span>`;
+  if(ws===THIS_W)return `<span class="badge live">진행 중 ${s.pct}%</span>`;
+  return `<span class="badge wait">시작 전</span>`;
+}
+function goalText(id,ws){
+  const s=ps(id),g=GOALS[ws]||'';
+  if(s.editing)return `<input class="goal-edit" data-ge="${id}" maxlength="40" value="${esc(g)}" placeholder="이번 주 목표" aria-label="주간 목표 입력">`;
+  return `<button class="gtap" data-a="edit" data-p="${id}" aria-label="주간 목표 고치기"><div class="goal-t ${g?'':'ph'}">${g?esc(g):'목표를 적어 보세요'}</div></button>`;
+}
+function goalHTML(id,v,ws){
+  const label=ws<THIS_W?'지난주 목표':ws===THIS_W?'이번 주 목표':'다음 주 목표';
+  if(v==='A')return `<div class="gA"><small><span>${label}</span>${badge(ws)}</small>${goalText(id,ws)}</div>`;
+  if(v==='B'){const s=weekStat(ws);return `<div class="gB"><small><span>${label}</span>${badge(ws)}</small>${goalText(id,ws)}<div class="gbar"><i style="width:${s.pct}%"></i></div></div>`}
+  return `<div class="gC">${goalText(id,ws)}${badge(ws)}</div>`;
+}
+function weekHTML(id,v){
+  const s=ps(id),ks=[...Array(7)].map((_,i)=>addD(s.ws,i)),a=parse(ks[0]),b=parse(ks[6]);
+  return `<div class="p-week">
+    <div class="wk-h"><span><button data-a="wk" data-p="${id}" data-n="-7" aria-label="지난주">‹</button>${a.getMonth()+1}/${a.getDate()} – ${b.getMonth()+1}/${b.getDate()}<button data-a="wk" data-p="${id}" data-n="7" aria-label="다음 주">›</button></span>
+      ${s.ws!==THIS_W?`<button data-a="now" data-p="${id}" style="font-size:12px;color:var(--accent)">이번 주로</button>`:''}</div>
+    ${goalHTML(id,v,s.ws)}
+    <div class="days">${ks.map(k=>{const x=parse(k),t=day(k),d=t.filter(z=>z.done).length,pct=t.length?d/t.length*100:0;
+      return `<button class="dbtn ${k===TODAY?'today':''}" data-a="sel" data-p="${id}" data-k="${k}" aria-pressed="${k===s.sel}" aria-label="${x.getMonth()+1}월 ${x.getDate()}일 ${d}/${t.length}">${WD[x.getDay()]}<span class="ring" style="background:conic-gradient(var(--accent) ${pct}%,var(--line) 0)"><span>${x.getDate()}</span></span></button>`}).join('')}</div></div>`;
+}
+function taskHTML(id,k,t){const l=lab(t.l);
+  return `<label class="task ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} data-a="tg" data-p="${id}" data-k="${k}" data-id="${t.id}"><span class="t">${esc(t.text)}</span></label>`}
+function dayHTML(id){
+  const s=ps(id),k=s.sel,x=parse(k),prev=addD(k,-1),undone=day(prev).filter(t=>!t.done);
+  let h=`<div class="p-day"><h4>${x.getMonth()+1}월 ${x.getDate()}일 (${WD[x.getDay()]})${k===TODAY?' · 오늘':''}</h4>`;
+  if(k===TODAY&&undone.length&&!s.dismiss[k])h+=`<div class="banner">어제 못한 일 ${undone.length}개가 있어요. 오늘로 가져올까요?<div><button class="go" data-a="move" data-p="${id}">가져오기</button><button data-a="dis" data-p="${id}">그냥 두기</button></div></div>`;
+  const ts=day(k);
+  return h+(ts.length?ts.map(t=>taskHTML(id,k,t)).join(''):'<div class="empty">오늘 할 일을 적어 보세요</div>')+'</div>';
+}
+function addHTML(id){
+  return `<div class="p-add">
+  <div class="addrow"><input type="text" placeholder="할 일 추가" data-in="${id}" aria-label="할 일 입력"><button data-a="add" data-p="${id}">추가</button></div></div>`}
+
+const REVIEW={};
+function closeHTML(id){
+  const s=ps(id),lw=addD(THIS_W,-7),sw=weekStat(lw),f=k=>{const x=parse(k);return (x.getMonth()+1)+'/'+x.getDate()};
+  const rv=REVIEW[lw]||{good:'',bad:''};
+  const undone=[...Array(7)].flatMap((_,i)=>day(addD(lw,i)).filter(t=>!t.done));
+  if(s.close===1){
+    const rings=[...Array(7)].map((_,i)=>{const k=addD(lw,i),x=parse(k),t=day(k),d=t.filter(z=>z.done).length,pct=t.length?d/t.length*100:0;return `<div class="dbtn">${WD[x.getDay()]}<span class="ring" style="background:conic-gradient(var(--accent) ${pct}%,var(--line) 0)"><span>${x.getDate()}</span></span></div>`}).join('');
+    return `<div class="close"><div class="c-top"><span>${f(lw)} – ${f(addD(lw,6))} 마감</span><button data-a="cSkip" data-p="${id}">건너뛰기</button></div>
+      <div class="c-goal">${GOALS[lw]?esc(GOALS[lw]):'적어 둔 목표가 없어요'}</div>
+      <div class="c-big"><b>${sw.pct}%</b><span>할 일 ${sw.total}개 중 ${sw.done}개 완료</span></div>
+      <div class="days">${rings}</div>
+      <p class="c-note">못 끝낸 일 ${undone.length}개는 다음 단계에서 가져올지 골라요.</p>
+      <label class="c-f"><span>잘된 점 한 줄 <em>(선택)</em></span><input type="text" data-rv="good" maxlength="40" value="${esc(rv.good)}" placeholder="월·화는 계획대로 끝냈다"></label>
+      <label class="c-f"><span>아쉬운 점 한 줄 <em>(선택)</em></span><input type="text" data-rv="bad" maxlength="40" value="${esc(rv.bad)}" placeholder="주말엔 손을 못 놃다"></label>
+      <button class="c-main" data-a="cNext" data-p="${id}">다음</button></div>`;
+  }
+  return `<div class="close"><div class="c-top"><button data-a="cBack" data-p="${id}">‹ 이전</button><span>${f(THIS_W)} – ${f(addD(THIS_W,6))} 시작</span></div>
+    ${rv.bad?`<div class="c-prev">지난주 아쉬운 점: ${esc(rv.bad)}</div>`:''}
+    <label class="c-f"><span>이번 주 목표 한 줄</span><input type="text" class="c-goalin" data-cg maxlength="40" value="${esc(GOALS[THIS_W]||'')}" placeholder="상세 화면 2장 완성하기"></label>
+    <div class="c-sub">지난주 못 끝낸 일</div>
+    ${undone.length?undone.map(t=>`<label class="c-chk"><input type="checkbox" data-cu="${t.id}" checked>${esc(t.text)}</label>`).join(''):'<p class="c-note">지난주 할 일을 모두 끝냈어요.</p>'}
+    <p class="c-note">체크한 일만 이번 주 월요일 목록으로 가져와요. 지난주 기록은 그대로 남아요.</p>
+    <button class="c-main primary" data-a="cStart" data-p="${id}">이번 주 시작</button></div>`;
+}
+document.getElementById('phones').innerHTML=VARIANTS.map(v=>`<div class="ph-col"><h3>${v.name}${v.rec?'<span class="rec">추천</span>':''}</h3><p>${v.desc}</p><div data-slot="${v.id}"></div></div>`).join('');
+function render(){
+  document.documentElement.style.setProperty('--gsize',SIZE+'px');
+  VARIANTS.forEach(v=>{document.querySelector(`[data-slot="${v.id}"]`).innerHTML=`<div class="phone">${ps(v.id).close?closeHTML(v.id):weekHTML(v.id,v.id)+dayHTML(v.id)+addHTML(v.id)}</div>`});
+  const ge=document.querySelector('[data-ge]');if(ge){ge.focus();ge.setSelectionRange(ge.value.length,ge.value.length)}
+  const nl=document.querySelector('[data-nl]');if(nl&&!ge)nl.focus();
+}
+function saveGoal(id,val){GOALS[ps(id).ws]=val.trim();ps(id).editing=false;render()}
+function addTask(id){const i=document.querySelector(`[data-in="${id}"]`);const v=i&&i.value.trim();if(!v)return;const s=ps(id);day(s.sel).push({id:uid(),text:v,l:s.pick,done:false});render();const n2=document.querySelector(`[data-in="${id}"]`);if(n2)n2.focus()}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;
+  const a=b.dataset.a,id=b.dataset.p,s=id?ps(id):null;
+  if(a==='closeOpen'){s.close=1;s.ws=THIS_W;s.sel=TODAY;s.editing=false}
+  else if(a==='cSkip'){s.close=0}
+  else if(a==='cNext'){const g=document.querySelector('[data-rv="good"]'),bd=document.querySelector('[data-rv="bad"]');REVIEW[addD(THIS_W,-7)]={good:g?g.value.trim():'',bad:bd?bd.value.trim():''};s.close=2}
+  else if(a==='cBack'){s.close=1}
+  else if(a==='cStart'){const g=document.querySelector('[data-cg]');if(g)GOALS[THIS_W]=g.value.trim();const ids=[...document.querySelectorAll('[data-cu]:checked')].map(x=>x.dataset.cu);const lw=addD(THIS_W,-7);const picked=[...Array(7)].flatMap((_,i)=>day(addD(lw,i)).filter(t=>ids.includes(t.id)));day(THIS_W).unshift(...picked.map(t=>({id:uid(),text:t.text,l:t.l,done:false})));s.close=0;s.ws=THIS_W;s.sel=THIS_W}
+  else if(a==='size'){SIZE=+b.dataset.v}
+  else if(a==='tg'){day(b.dataset.k).find(t=>t.id===b.dataset.id).done=b.checked}
+  else if(a==='sel'){s.sel=b.dataset.k}
+  else if(a==='wk'){s.ws=addD(s.ws,+b.dataset.n);s.sel=s.ws===THIS_W?TODAY:s.ws;s.editing=false}
+  else if(a==='now'){s.ws=THIS_W;s.sel=TODAY}
+  else if(a==='edit'){Object.keys(PS).forEach(k=>PS[k].editing=false);s.editing=true}
+  else if(a==='pick'){s.pick=b.dataset.l}
+  else if(a==='gt'){s.goal=!s.goal}
+  else if(a==='nl'){s.newLab=!s.newLab}
+  else if(a==='nlok'){const i=document.querySelector(`[data-nl="${id}"]`);const v=i&&i.value.trim();if(!v)return;const ids=labelsFor(s.sel);const nid='l'+uid();REG[nid]={id:nid,name:v,c:ids.length%3};ids.push(nid);s.pick=nid;s.newLab=false}
+  else if(a==='add'){addTask(id);return}
+  else if(a==='move'){const prev=addD(s.sel,-1);const u=day(prev).filter(t=>!t.done);DATA[prev]=day(prev).filter(t=>t.done);day(s.sel).unshift(...u)}
+  else if(a==='dis'){s.dismiss[s.sel]=true}
+  render();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.dataset.in)addTask(e.target.dataset.in);
+  if(e.key==='Enter'&&e.target.dataset.nl){const b=document.querySelector(`[data-a="nlok"][data-p="${e.target.dataset.nl}"]`);if(b)b.click()}
+  if(e.target.dataset.ge){if(e.key==='Enter')saveGoal(e.target.dataset.ge,e.target.value);if(e.key==='Escape'){ps(e.target.dataset.ge).editing=false;render()}}
+});
+document.addEventListener('focusout',e=>{if(e.target.dataset&&e.target.dataset.ge)saveGoal(e.target.dataset.ge,e.target.value)});
+render();
+</script>
+</body>
+</html>
