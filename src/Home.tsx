@@ -24,7 +24,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const cur = loaded?.ws === ws ? loaded : null
   const [draft, setDraft] = useState('')
-  const [pick, setPick] = useState<string | null>(cats[0]?.id ?? null) // 새 할 일 카테고리. 마지막으로 고른 것
+  const [pick, setPick] = useState<string | null>(null) // 새 할 일 카테고리. 처음엔 기타(TD-1), 고르면 이 화면에서 유지(E3)
   const [review, setReview] = useState(false)
   const [pyramid, setPyramid] = useState(false)
   const [version, setVersion] = useState(0) // 회고에서 돌아오면 다시 불러오기
@@ -45,12 +45,12 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   // 할 일 입력 권유(4.5): 지금까지 기록, 오늘 권유를 닫았는지·회고를 저장했는지. 회고에서 돌아오면 다시
   const [nudgeData, setNudgeData] = useState<{ todos: Todo[]; closed: boolean; reviewed: boolean } | null>(null)
   useEffect(() => {
-    Promise.all([loadTodos('1970-01-01', t), loadDay(t)])
+    Promise.all([loadTodos(setup.startedOn, t), loadDay(t)]) // "지금까지"는 진입일부터(BI-3)
       .then(([todos, day]) => setNudgeData({ todos, closed: day.nudgeClosed, reviewed: day.reviewed }))
       .catch(onError)
-  }, [t, version, onError])
+  }, [t, version, onError, setup.startedOn])
   // 권유는 "오늘" 목록에 더하니(NU-7) 오늘을 볼 때만
-  const suggestion = nudgeData && !nudgeData.closed && sel === t ? nudge(cats, nudgeData.todos) : null
+  const suggestion = nudgeData && !nudgeData.closed && sel === t ? nudge(cats, nudgeData.todos, setup.gone.map((c) => c.id)) : null
 
   function dismissNudge() {
     setNudgeData((d) => d && { ...d, closed: true })

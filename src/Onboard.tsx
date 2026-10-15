@@ -53,7 +53,7 @@ export function Onboard({ onDone, onError }: Props) {
           className="f-big"
           maxLength={30}
           value={goal}
-          placeholder="예: 나다운 일로 먹고사는 사람"
+          placeholder="예: IT 회사 PM으로 취업하기"
           aria-label="핵심목표"
           onChange={(e) => setGoal(e.target.value)}
         />
@@ -121,7 +121,7 @@ export function Onboard({ onDone, onError }: Props) {
         <span>시작하기 3 / 3</span>
       </div>
       <h1 className="f-h">일주일에 핵심목표를 위해 몇 시간 쓸 거야?</h1>
-      <p className="c-note">비율이 치우쳤더라도 그 주에 일을 했는지 보는 기준이야. 매주 같은 값으로 쓰고, 주간 마감에서 바꿀 수 있어.</p>
+      <p className="c-note">카테고리 비율과 상관없이 그 주에 일을 했는지 보는 기준이야. 매주 같은 값으로 쓰고, 주간 마감에서 바꿀 수 있어.</p>
       <label className="ob-row">
         <input
           type="number"
