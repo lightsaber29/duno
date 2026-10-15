@@ -9,6 +9,8 @@
   --soft: #e6ebff;
   --done: #98a2b3;
   --danger: #d92d20;
+  --ok: #0e9f6e;
+  --ok-soft: #dcf5ea;
   color-scheme: light;
   font-family: 'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', sans-serif;
   font-size: 15px;
@@ -27,6 +29,8 @@
     --soft: #222c52;
     --done: #6b7588;
     --danger: #ff6b63;
+    --ok: #5fdcaa;
+    --ok-soft: #163a2c;
     color-scheme: dark;
   }
 }
@@ -40,6 +44,8 @@
   --soft: #222c52;
   --done: #6b7588;
   --danger: #ff6b63;
+  --ok: #5fdcaa;
+  --ok-soft: #163a2c;
   color-scheme: dark;
 }
 * {
@@ -151,6 +157,64 @@ button {
   font-size: 12px;
   font-weight: 400;
 }
+.goal {
+  padding: 0 4px 10px;
+}
+.goal small {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 1px;
+}
+.goal-t {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+button.goal-t {
+  cursor: text;
+}
+.goal-t.ph {
+  color: var(--done);
+  font-weight: 500;
+}
+.goal-edit {
+  width: 100%;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 17px;
+  font-weight: 700;
+  background: var(--bg);
+}
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.badge.live {
+  background: var(--soft);
+  color: var(--accent);
+}
+.badge.final {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.badge.wait {
+  background: var(--line);
+  color: var(--muted);
+}
 .days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -229,6 +293,8 @@ button {
   padding: 0;
   text-align: left;
   overflow-wrap: anywhere;
+}
+button.t {
   cursor: text;
 }
 .task.done .t {

@@ -25,3 +25,14 @@ export async function updateTodo(id: string, patch: Partial<Pick<Todo, 'text' | 
 export async function deleteTodo(id: string): Promise<void> {
   must(await supabase.from('todos').delete().eq('id', id))
 }
+
+/** 그 주의 목표. 행이 없으면 빈 문자열 */
+export async function loadGoal(weekStart: string): Promise<string> {
+  const row = must(await supabase.from('weeks').select('goal').eq('week_start', weekStart).maybeSingle<{ goal: string }>())
+  return row?.goal ?? ''
+}
+
+/** 주 행이 없으면 만들고, 있으면 goal만 바꾼다 */
+export async function saveGoal(weekStart: string, goal: string): Promise<void> {
+  must(await supabase.from('weeks').upsert({ week_start: weekStart, goal }, { onConflict: 'user_id,week_start' }))
+}
