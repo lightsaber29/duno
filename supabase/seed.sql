@@ -23,28 +23,28 @@ begin
 
   -- 8일 전
   insert into entries (plan_id, date, minutes) values (pid, current_date - 8, 180) returning id into eid;
-  insert into entry_shares values (eid, a, 70), (eid, b, 20), (eid, null, 10);
+  insert into entry_shares (entry_id, subgoal_id, ratio) values (eid, a, 70), (eid, b, 20), (eid, null, 10);
   -- 7일 전
   insert into entries (plan_id, date, minutes) values (pid, current_date - 7, 240) returning id into eid;
-  insert into entry_shares values (eid, a, 60), (eid, c, 30), (eid, d, 10);
+  insert into entry_shares (entry_id, subgoal_id, ratio) values (eid, a, 60), (eid, c, 30), (eid, d, 10);
   -- 6일 전
   insert into entries (plan_id, date, minutes) values (pid, current_date - 6, 120) returning id into eid;
-  insert into entry_shares values (eid, a, 50), (eid, b, 50);
+  insert into entry_shares (entry_id, subgoal_id, ratio) values (eid, a, 50), (eid, b, 50);
   -- 5일 전
   insert into entries (plan_id, date, minutes) values (pid, current_date - 5, 300) returning id into eid;
-  insert into entry_shares values (eid, a, 70), (eid, c, 20), (eid, null, 10);
+  insert into entry_shares (entry_id, subgoal_id, ratio) values (eid, a, 70), (eid, c, 20), (eid, null, 10);
   -- 4일 전: 휴식
   insert into entries (plan_id, date, minutes) values (pid, current_date - 4, null);
   -- 3일 전
   insert into entries (plan_id, date, minutes) values (pid, current_date - 3, 90) returning id into eid;
-  insert into entry_shares values (eid, a, 40), (eid, d, 60);
+  insert into entry_shares (entry_id, subgoal_id, ratio) values (eid, a, 40), (eid, d, 60);
   -- 2일 전
   insert into entries (plan_id, date, minutes) values (pid, current_date - 2, 210) returning id into eid;
-  insert into entry_shares values (eid, a, 60), (eid, b, 20), (eid, c, 20);
+  insert into entry_shares (entry_id, subgoal_id, ratio) values (eid, a, 60), (eid, b, 20), (eid, c, 20);
   -- 어제
   insert into entries (plan_id, date, minutes) values (pid, current_date - 1, 150) returning id into eid;
-  insert into entry_shares values (eid, a, 50), (eid, c, 30), (eid, d, 20);
+  insert into entry_shares (entry_id, subgoal_id, ratio) values (eid, a, 50), (eid, c, 30), (eid, d, 20);
   -- 오늘
   insert into entries (plan_id, date, minutes) values (pid, current_date, 240) returning id into eid;
-  insert into entry_shares values (eid, a, 60), (eid, b, 10), (eid, c, 10), (eid, d, 10), (eid, null, 10);
+  insert into entry_shares (entry_id, subgoal_id, ratio) values (eid, a, 60), (eid, b, 10), (eid, c, 10), (eid, d, 10), (eid, null, 10);
 end $$;
