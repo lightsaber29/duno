@@ -40,8 +40,8 @@ export function Onboard({ onDone, onError }: Props) {
         <div className="c-top">
           <span>시작하기 1 / 2</span>
         </div>
-        <h1 className="f-h">어떤 사람이 되고 싶나요?</h1>
-        <p className="c-note">끝나지 않는 지향점이에요. 한 줄로 적어 주세요. 메인 화면 맨 위에 늘 보여요.</p>
+        <h1 className="f-h">어떤 사람이 되고 싶어?</h1>
+        <p className="c-note">끝나지 않는 지향점이야. 한 줄로 적어 줘. 메인 화면 맨 위에 늘 보여.</p>
         <input
           type="text"
           className="f-big"
@@ -61,8 +61,8 @@ export function Onboard({ onDone, onError }: Props) {
         <button type="button" onClick={() => setStep(1)}>‹ 이전</button>
         <span>시작하기 2 / 2</span>
       </div>
-      <h1 className="f-h">핵심목표를 위해 시간을 어디에 쓰고 싶나요?</h1>
-      <p className="c-note">카테고리는 최대 5개. %는 내 시간 중 그 카테고리에 쓰고 싶은 비율이에요. 똑같이 나눠 두었으니 원하는 대로 고치세요.</p>
+      <h1 className="f-h">핵심목표를 위해 시간을 어디에 쓰고 싶어?</h1>
+      <p className="c-note">카테고리는 최대 5개. %는 내 시간 중 그 카테고리에 쓰고 싶은 비율이야. 똑같이 나눠 뒀으니 원하는 대로 고쳐.</p>
       {rows.map((r, i) => (
         <div key={i} className="ob-row">
           <input
@@ -93,9 +93,9 @@ export function Onboard({ onDone, onError }: Props) {
         <button type="button" onClick={() => setRows(even)}>똑같이 나누기</button>
       </div>
       <p className={'ob-sum' + (total === 100 ? '' : ' bad')} aria-live="polite">
-        합계 {total}%{total === 100 ? '' : ' · 100%로 맞춰 주세요'}
+        합계 {total}%{total === 100 ? '' : ' · 100%로 맞춰 줘'}
       </p>
-      <p className="c-note">어디에도 안 맞는 일은 "기타"로 모여요. 기타는 5개에 들어가지 않아요.</p>
+      <p className="c-note">어디에도 안 맞는 일은 "기타"로 모여. 기타는 5개에 들어가지 않아.</p>
       <button type="button" className="c-main primary" disabled={!ready || busy} onClick={start}>시작하기</button>
     </main>
   )

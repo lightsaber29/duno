@@ -98,7 +98,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
     <main className="home">
       {nudge && (
         <button type="button" className="nudge" onClick={() => setReview(true)}>
-          오늘 회고를 적어 보세요 ›
+          오늘 회고를 적어 봐 ›
         </button>
       )}
       <header className="vis">
@@ -164,7 +164,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
               />
             ))
           ) : (
-            <p className="empty">할 일을 적어 보세요</p>
+            <p className="empty">할 일을 적어 봐</p>
           ))}
       </section>
 
@@ -186,7 +186,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
           <input ref={addRef} type="text" value={draft} maxLength={100} placeholder="할 일 추가" aria-label="할 일 입력" onChange={(e) => setDraft(e.target.value)} />
           <button type="submit">추가</button>
         </div>
-        <p className="hint">카테고리를 고르고 추가하세요. 라벨을 누르면 바꿀 수 있어요.</p>
+        <p className="hint">카테고리를 고르고 추가해. 라벨을 누르면 바꿀 수 있어.</p>
       </form>
     </main>
   )
@@ -233,13 +233,13 @@ function useInlineEdit(value: string, onSave: (v: string) => void, allowEmpty = 
 
 type GoalProps = { goal: string; label: string; onSave: (goal: string) => void }
 
-/** 주간 목표 한 줄. 비워서 지울 수 있다. 빈칸 문구는 주에 맞춰 "지난주/이번 주/다음 주 목표를 적어 보세요" */
+/** 주간 목표 한 줄. 비워서 지울 수 있다. 빈칸 문구는 주에 맞춰 "지난주/이번 주/다음 주 목표를 적어 봐" */
 function Goal({ goal, label, onSave }: GoalProps) {
   const e = useInlineEdit(goal, onSave, true)
   if (e.editing) return <input key="edit" className="goal-edit" maxLength={40} placeholder={label} aria-label="주간 목표 입력" onBlur={e.finish} {...e.inputProps} />
   return (
     <button key="view" type="button" className={'goal-t' + (goal ? '' : ' ph')} aria-label="주간 목표 고치기" onClick={e.start}>
-      {goal || `${label}를 적어 보세요`}
+      {goal || `${label}를 적어 봐`}
     </button>
   )
 }

@@ -92,7 +92,7 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, onDone, onError
               </span>
             ))
           ) : (
-            <span>적은 회고가 없어요.</span>
+            <span>적은 회고가 없어.</span>
           )}
         </div>
         <label className="c-f">
@@ -115,9 +115,9 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, onDone, onError
           <button type="button" onClick={() => setStep(1)}>‹ 이전</button>
           <span>주간 마감 2 / 3</span>
         </div>
-        <h1 className="f-h">시간을 어떻게 쓸지 정리해요</h1>
+        <h1 className="f-h">시간을 어떻게 쓸지 정리하자</h1>
         <p className="c-note">
-          최근 4주 기록한 시간 기준이에요. <Verdict rows={p.rows} total={p.rows.reduce((a, r) => a + r.minutes, 0)} />
+          최근 4주 기록한 시간 기준이야. <Verdict rows={p.rows} total={p.rows.reduce((a, r) => a + r.minutes, 0)} />
         </p>
         {p.biased ? (
           <>
@@ -131,7 +131,7 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, onDone, onError
                   </span>
                 </span>
               ))}
-              <span className="c-note">정한 비율과 실제의 중간값이에요.</span>
+              <span className="c-note">정한 비율과 실제의 중간값이야.</span>
             </button>
             {p.timePlan.length > 0 && (
               <button type="button" className="opt" aria-pressed={choice === 'time'} onClick={() => setChoice('time')}>
@@ -139,7 +139,7 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, onDone, onError
                 {p.timePlan.map((x) => (
                   <span key={x.name}>{planText(x)}</span>
                 ))}
-                <span className="c-note">이번 주 목표 아래에 시간 계획으로 보여요.</span>
+                <span className="c-note">이번 주 목표 아래에 시간 계획으로 보여.</span>
               </button>
             )}
             <button type="button" className="opt" aria-pressed={choice === 'keep'} onClick={() => setChoice('keep')}>
@@ -147,12 +147,12 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, onDone, onError
             </button>
           </>
         ) : (
-          <p className="c-note">치우친 카테고리가 없어서 비율은 그대로 둘게요.</p>
+          <p className="c-note">치우친 카테고리가 없어서 비율은 그대로 둘게.</p>
         )}
         {p.otherTodos && (
           <div className="sug">
             <b>기타에서 새 카테고리 만들기</b>
-            <span>기타에 쓴 시간 {fmtMinutes(p.rows[p.rows.length - 1].minutes)}. 새 카테고리로 옮길 일을 직접 골라 주세요.</span>
+            <span>기타에 쓴 시간 {fmtMinutes(p.rows[p.rows.length - 1].minutes)}. 새 카테고리로 옮길 일을 직접 골라 줘.</span>
             {p.otherTodos.map((t) => (
               <label key={t.id} className="c-chk">
                 <input type="checkbox" checked={move.has(t.id)} onChange={(e) => setMove((s) => toggle(s, t.id, e.target.checked))} />
@@ -160,7 +160,7 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, onDone, onError
               </label>
             ))}
             <input type="text" maxLength={8} value={newName} placeholder="새 카테고리 이름" aria-label="새 카테고리 이름" onChange={(e) => setNewName(e.target.value)} />
-            <span className="c-note">새 카테고리는 10%로 시작하고, 가장 큰 카테고리에서 10%를 가져와요.</span>
+            <span className="c-note">새 카테고리는 10%로 시작하고, 가장 큰 카테고리에서 10%를 가져와.</span>
             <div className="acts">
               <button type="button" aria-pressed={acc === true} onClick={() => setAcc(true)}>승인</button>
               <button type="button" className="no" aria-pressed={acc === false} onClick={() => setAcc(false)}>그대로 두기</button>
@@ -192,9 +192,9 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, onDone, onError
           </label>
         ))
       ) : (
-        <p className="c-note">모두 끝냈어요.</p>
+        <p className="c-note">모두 끝냈어.</p>
       )}
-      <p className="c-note">체크한 일만 이번 주 월요일 목록에 추가해요. 지난주 기록은 그대로예요.</p>
+      <p className="c-note">체크한 일만 이번 주 월요일 목록에 추가할게. 지난주 기록은 그대로야.</p>
       <button type="button" className="c-main primary" disabled={busy} onClick={() => finish(false)}>이번 주 시작</button>
     </main>
   )

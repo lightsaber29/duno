@@ -87,7 +87,7 @@ export function Review({ cats, onClose, onError }: Props) {
           </button>
         ))}
       </div>
-      <p className="c-note">할 일마다 실제로 쓴 시간을 적어요. 체크 안 한 일도 쓴 시간이 있으면 적어요.</p>
+      <p className="c-note">할 일마다 실제로 쓴 시간을 적어. 체크 안 한 일도 쓴 시간이 있으면 적어.</p>
       {todos &&
         (list.length ? (
           list.map((x) => (
@@ -136,7 +136,7 @@ export function Review({ cats, onClose, onError }: Props) {
             </div>
           ))
         ) : (
-          <p className="c-note">이날 적어 둔 할 일이 없어요.</p>
+          <p className="c-note">이날 적어 둔 할 일이 없어.</p>
         ))}
       <form
         className="rv-add"
