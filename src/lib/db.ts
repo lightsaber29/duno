@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import type { WeekRatio } from './pyramid'
 
 export type Todo = { id: string; date: string; text: string; done: boolean; category_id: string | null; minutes: number }
 
@@ -14,8 +15,13 @@ export async function loadTodos(from: string, to: string): Promise<Todo[]> {
   return must(await supabase.from('todos').select(COLS).gte('date', from).lte('date', to).order('created_at')) as Todo[]
 }
 
-/** more: 회고에서 바로 추가하는 일은 체크된 채 시간과 함께 */
-export async function addTodo(date: string, text: string, category_id: string | null, more: Partial<Pick<Todo, 'done' | 'minutes'>> = {}): Promise<Todo> {
+/** more: 회고에서 바로 추가하는 일은 체크된 채 시간과 함께, 권유로 추가하는 일은 nudged(성공 판단용, NU-8) */
+export async function addTodo(
+  date: string,
+  text: string,
+  category_id: string | null,
+  more: Partial<Pick<Todo, 'done' | 'minutes'>> & { nudged?: boolean } = {},
+): Promise<Todo> {
   return must(await supabase.from('todos').insert({ date, text, category_id, ...more }).select(COLS).single<Todo>())
 }
 
@@ -27,15 +33,17 @@ export async function deleteTodo(id: string): Promise<void> {
   must(await supabase.from('todos').delete().eq('id', id))
 }
 
-export type Week = { goal: string; good: string; bad: string; closed_at: string | null; time_plan: string }
+export type Week = { goal: string; good: string; bad: string; closed_at: string | null; target_minutes: number | null; changes: Changes | null }
+/** 주간 마감에서 무엇을 바꿨는지(WC-11). 화면에는 안 보인다 */
+export type Changes = { goal: boolean; ratio: boolean; target: boolean; added: number; renamed: number; deleted: number }
 
 /** 그 주 행. 아직 안 만들어졌으면 null */
 export async function loadWeek(weekStart: string): Promise<Week | null> {
-  return must(await supabase.from('weeks').select('goal, good, bad, closed_at, time_plan').eq('week_start', weekStart).maybeSingle<Week>())
+  return must(await supabase.from('weeks').select('goal, good, bad, closed_at, target_minutes, changes').eq('week_start', weekStart).maybeSingle<Week>())
 }
 
-/** 마감 흐름을 끝냈거나 건너뛴 표시. 회고 한 줄도 같이 저장 */
-export async function closeWeek(weekStart: string, review?: { good: string; bad: string }): Promise<void> {
+/** 마감 흐름을 끝냈거나 건너뛴 표시. 회고 한 줄과 바꾼 것 기록도 같이 저장 */
+export async function closeWeek(weekStart: string, review?: { good: string; bad: string; changes: Changes }): Promise<void> {
   await saveWeek(weekStart, { ...review, closed_at: new Date().toISOString() })
 }
 
@@ -45,26 +53,32 @@ export async function saveWeek(weekStart: string, patch: Partial<Week>): Promise
 }
 
 export type Category = { id: string; name: string; ratio: number }
-export type Setup = { coreGoal: string; cats: Category[] }
+/** cats: 지우지 않은 카테고리(핵심목표 비율), gone: 지운 카테고리(라벨 이름 보이기용, TD-3) */
+export type Setup = { coreGoal: string; cats: Category[]; gone: Category[] }
 
 /** 핵심목표와 카테고리. 핵심목표가 없으면 null → 진입 화면 */
 export async function loadSetup(): Promise<Setup | null> {
   const p = must(await supabase.from('profiles').select('core_goal').maybeSingle<{ core_goal: string }>())
   if (!p) return null
-  const cats = must(await supabase.from('categories').select('id, name, ratio').order('position')) as Category[]
-  return { coreGoal: p.core_goal, cats }
+  const rows = must(await supabase.from('categories').select('id, name, ratio, deleted_at').order('position')) as (Category & { deleted_at: string | null })[]
+  const pick = (gone: boolean) => rows.filter((r) => !!r.deleted_at === gone).map(({ id, name, ratio }) => ({ id, name, ratio }))
+  return { coreGoal: p.core_goal, cats: pick(false), gone: pick(true) }
 }
 
-/** 진입 화면 끝. 카테고리 → 핵심목표 순서라 중간에 끊기면 다음에 진입 화면이 다시 뜬다 */
-export async function createSetup(coreGoal: string, cats: { name: string; ratio: number }[]): Promise<Setup> {
+/**
+ * 진입 화면 끝. 카테고리 → 주간 목표 시간(이번 주부터) → 핵심목표 순서라, 중간에 끊기면 다음에 진입 화면이 다시 뜬다.
+ * target: 이번 주 월요일과 주간 목표 시간(분)
+ */
+export async function createSetup(coreGoal: string, cats: { name: string; ratio: number }[], target: { week: string; minutes: number }): Promise<Setup> {
   // 진입은 핵심목표가 없을 때만 오니, 지난번에 끊겨 남은 카테고리가 있으면 지우고 새로 넣는다.
   // 조건 없는 delete는 Supabase(safeupdate)가 막아서 항상 참인 조건을 단다
   must(await supabase.from('categories').delete().not('id', 'is', null))
   const rows = must(
     await supabase.from('categories').insert(cats.map((c, i) => ({ ...c, position: i }))).select('id, name, ratio').order('position'),
   ) as Category[]
+  await saveWeek(target.week, { target_minutes: target.minutes })
   must(await supabase.from('profiles').insert({ core_goal: coreGoal }))
-  return { coreGoal, cats: rows }
+  return { coreGoal, cats: rows, gone: [] }
 }
 
 /** from~to 회고 한 줄. 날짜 → 글 */
@@ -93,6 +107,38 @@ export async function setRatios(rows: { id: string; ratio: number }[]): Promise<
   for (const r of rows) must(await supabase.from('categories').update({ ratio: r.ratio }).eq('id', r.id))
 }
 
-export async function moveTodos(ids: string[], category_id: string): Promise<void> {
-  must(await supabase.from('todos').update({ category_id }).in('id', ids))
+/** 지금까지 정한 주간 비율 전부(작다: 주 × 카테고리) */
+export async function loadWeekRatios(): Promise<WeekRatio[]> {
+  return must(await supabase.from('week_ratios').select('week_start, category_id, ratio')) as WeekRatio[]
+}
+
+/** 그날 할 일 입력 권유를 닫았는지(NU-6) */
+export async function loadNudgeClosed(date: string): Promise<boolean> {
+  const row = must(await supabase.from('days').select('nudge_closed').eq('date', date).maybeSingle<{ nudge_closed: boolean }>())
+  return row?.nudge_closed ?? false
+}
+
+/** 그날 권유를 닫는다. 회고 한 줄은 그대로 */
+export async function closeNudge(date: string): Promise<void> {
+  must(await supabase.from('days').upsert({ date, nudge_closed: true }, { onConflict: 'user_id,date' }))
+}
+
+/** 주마다 정한 주간 목표 시간(분) 전부. 어느 주 값은 weekTarget으로 찾는다 */
+export async function loadTargets(): Promise<{ week_start: string; target_minutes: number | null }[]> {
+  return must(await supabase.from('weeks').select('week_start, target_minutes')) as { week_start: string; target_minutes: number | null }[]
+}
+
+export async function renameCategory(id: string, name: string): Promise<void> {
+  must(await supabase.from('categories').update({ name }).eq('id', id))
+}
+
+/** 지운 표시만. 그 카테고리 할 일과 시간은 그대로 남는다(TD-3) */
+export async function deleteCategory(id: string): Promise<void> {
+  must(await supabase.from('categories').update({ deleted_at: new Date().toISOString() }).eq('id', id))
+}
+
+/** 그 주의 주간 비율 묶음을 통째로 바꾼다 */
+export async function saveWeekRatios(weekStart: string, rows: { category_id: string; ratio: number }[]): Promise<void> {
+  must(await supabase.from('week_ratios').delete().eq('week_start', weekStart))
+  must(await supabase.from('week_ratios').insert(rows.map((r) => ({ week_start: weekStart, ...r }))))
 }

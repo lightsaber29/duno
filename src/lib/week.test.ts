@@ -2,7 +2,7 @@
 // 규칙 근거: docs/스케이트보드 phase1.md "확정 사항", docs/스케이트보드 phase1 개발 계획.md
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { addDays, rate, shouldClose, weekDays, weekKind, weekRange, weekStart } from './week.ts'
+import { addDays, rate, targetMinutes, shouldClose, weekDays, weekKind, weekRange, weekStart } from './week.ts'
 
 test('주 시작은 월요일: 월·수·일 모두 같은 월요일', () => {
   assert.equal(weekStart('2026-10-12'), '2026-10-12') // 월
@@ -40,4 +40,16 @@ test('마감 흐름을 띄울지', () => {
   assert.equal(shouldClose({ goal: '목표', closed_at: null }, 0), true) // 목표만 있음
   assert.equal(shouldClose({ goal: '', closed_at: null }, 0), false)
   assert.equal(shouldClose({ goal: '목표', closed_at: '2026-10-19T00:00:00Z' }, 3), false) // 이미 끝냄·건너뜀
+})
+
+test('주간 목표 시간 입력: 0.5시간 단위, 1~100시간 (phase3 ON-5)', () => {
+  assert.equal(targetMinutes('20'), 1200)
+  assert.equal(targetMinutes('7.5'), 450)
+  assert.equal(targetMinutes('1'), 60)
+  assert.equal(targetMinutes('100'), 6000)
+  assert.equal(targetMinutes('0.5'), null, '1시간 미만')
+  assert.equal(targetMinutes('100.5'), null)
+  assert.equal(targetMinutes('7.3'), null, '0.5 단위가 아님')
+  assert.equal(targetMinutes(''), null)
+  assert.equal(targetMinutes('abc'), null)
 })

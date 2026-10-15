@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { addTodo, deleteTodo, loadTodos, loadWeek, saveWeek, updateTodo, type Category, type Setup, type Todo } from './lib/db'
+import { addTodo, closeNudge, deleteTodo, loadNudgeClosed, loadTodos, loadWeek, saveWeek, updateTodo, type Category, type Setup, type Todo } from './lib/db'
 import { catName, catStyle, nextCat } from './lib/cats'
+import { fmtMinutes, nudge } from './lib/pyramid'
 import { addDays, isEvening, parseKey, rate, today, weekDays, weekKind, weekRange, weekStart } from './lib/week'
 import { Review } from './Review'
 import { Pyramid } from './Pyramid'
@@ -9,11 +10,12 @@ const WD = ['일', '월', '화', '수', '목', '금', '토']
 const GOAL_LABEL = { past: '지난주 목표', current: '이번 주 목표', future: '다음 주 목표' }
 
 type Props = { setup: Setup; startMonday?: boolean; onError: (e: unknown) => void; onSignOut: () => void }
-type Loaded = { ws: string; todos: Todo[]; goal: string; plan: string }
+type Loaded = { ws: string; todos: Todo[]; goal: string }
 
 /** 메인: 핵심목표 → 상단바 → 주간 목표·시간 계획 → 주간 줄 → 일간 목록 → 카테고리 고르기·할 일 입력. 문구는 프로토타입(킥보드 phase2.html) 그대로 */
 export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   const { cats } = setup
+  const named = [...cats, ...setup.gone]
   const t = today()
   const thisWeek = weekStart(t)
   const [ws, setWs] = useState(thisWeek)
@@ -31,7 +33,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   const reload = useCallback(
     () =>
       Promise.all([loadTodos(ws, addDays(ws, 6)), loadWeek(ws)])
-        .then(([todos, w]) => setLoaded({ ws, todos, goal: w?.goal ?? '', plan: w?.time_plan ?? '' }))
+        .then(([todos, w]) => setLoaded({ ws, todos, goal: w?.goal ?? '' }))
         .catch(onError),
     [ws, onError],
   )
@@ -39,6 +41,37 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   useEffect(() => {
     reload()
   }, [reload, version])
+
+  // 할 일 입력 권유(phase3 4.5): 지금까지 기록 전부와 오늘 닫았는지. 회고에서 돌아오면 다시
+  const [nudgeData, setNudgeData] = useState<{ todos: Todo[]; closed: boolean } | null>(null)
+  useEffect(() => {
+    Promise.all([loadTodos('1970-01-01', t), loadNudgeClosed(t)])
+      .then(([todos, closed]) => setNudgeData({ todos, closed }))
+      .catch(onError)
+  }, [t, version, onError])
+  // 권유는 "오늘" 목록에 더하니(NU-7) 오늘을 볼 때만
+  const suggestion = nudgeData && !nudgeData.closed && sel === t ? nudge(cats, nudgeData.todos) : null
+
+  function dismissNudge() {
+    setNudgeData((d) => d && { ...d, closed: true })
+    closeNudge(t).catch(onError)
+  }
+
+  /** 제시한 할 일을 오늘 목록에 더하고 그날 권유는 끝. 할 일 없이 카테고리만이면 그 카테고리를 골라 입력 칸으로 (NU-5) */
+  async function takeNudge(s: NonNullable<typeof suggestion>) {
+    if (!s.todo) {
+      setPick(s.id)
+      addRef.current?.focus()
+      return
+    }
+    try {
+      const row = await addTodo(t, s.todo.text, s.id, { nudged: true })
+      setLoaded((l) => l && mapTodos((ts) => [...ts, row])(l))
+      dismissNudge()
+    } catch (e) {
+      onError(e)
+    }
+  }
 
   const kind = weekKind(ws, t)
   const days = weekDays(ws)
@@ -78,6 +111,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
     return (
       <Review
         cats={cats}
+        named={named}
         onError={onError}
         onClose={(date) => {
           setReview(false)
@@ -93,12 +127,12 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   const s = parseKey(sel)
   const list = of(sel)
   // N1: 실제 알림 대신, 9시 이후 열었는데 오늘 시간이 하나도 안 적혀 있으면 띠
-  const nudge = ws === thisWeek && cur && isEvening() && of(t).every((x) => x.minutes === 0)
+  const reviewNudge = ws === thisWeek && cur && isEvening() && of(t).every((x) => x.minutes === 0)
   return (
     <main className="home">
-      {nudge && (
+      {reviewNudge && (
         <button type="button" className="nudge" onClick={() => setReview(true)}>
-          오늘 회고를 적어 보세요 ›
+          오늘 회고를 적어 봐 ›
         </button>
       )}
       <header className="vis">
@@ -121,7 +155,6 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
         <div className="goal">
           <small>{GOAL_LABEL[kind]}</small>
           {cur && <Goal key={ws} goal={cur.goal} label={GOAL_LABEL[kind]} onSave={(goal) => act((l) => ({ ...l, goal }), saveWeek(ws, { goal }))} />}
-          {cur?.plan && <p className="focus">시간 계획: {cur.plan}</p>}
         </div>
         <div className="days">
           {days.map((k) => {
@@ -154,6 +187,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
                 key={x.id}
                 todo={x}
                 cats={cats}
+                named={named}
                 onToggle={(done) => act(mapTodos((ts) => ts.map((y) => (y.id === x.id ? { ...y, done } : y))), updateTodo(x.id, { done }))}
                 onSave={(text) => act(mapTodos((ts) => ts.map((y) => (y.id === x.id ? { ...y, text } : y))), updateTodo(x.id, { text }))}
                 onDelete={() => act(mapTodos((ts) => ts.filter((y) => y.id !== x.id)), deleteTodo(x.id))}
@@ -164,7 +198,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
               />
             ))
           ) : (
-            <p className="empty">할 일을 적어 보세요</p>
+            <p className="empty">할 일을 적어 봐</p>
           ))}
       </section>
 
@@ -175,6 +209,15 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
           add()
         }}
       >
+        {suggestion && (
+          <div className="nudge-bar" role="status">
+            <span>{suggestion.name}에 계획보다 시간을 덜 썼어</span>
+            <button type="button" className="nudge-take" onClick={() => takeNudge(suggestion)}>
+              {suggestion.todo ? `+ ${suggestion.todo.text} ${fmtMinutes(suggestion.todo.minutes)}` : `+ ${suggestion.name} 할 일 적기`}
+            </button>
+            <button type="button" className="nudge-close" onClick={dismissNudge}>닫기</button>
+          </div>
+        )}
         <div className="picks" role="group" aria-label="카테고리 고르기">
           {[...cats.map((c) => c.id), null].map((id) => (
             <button key={id ?? 'etc'} type="button" className="pick" style={catStyle(cats, id)} aria-pressed={pick === id} onClick={() => setPick(id)}>
@@ -186,7 +229,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
           <input ref={addRef} type="text" value={draft} maxLength={100} placeholder="할 일 추가" aria-label="할 일 입력" onChange={(e) => setDraft(e.target.value)} />
           <button type="submit">추가</button>
         </div>
-        <p className="hint">카테고리를 고르고 추가하세요. 라벨을 누르면 바꿀 수 있어요.</p>
+        <p className="hint">카테고리를 고르고 추가해. 라벨을 누르면 바꿀 수 있어.</p>
       </form>
     </main>
   )
@@ -233,13 +276,13 @@ function useInlineEdit(value: string, onSave: (v: string) => void, allowEmpty = 
 
 type GoalProps = { goal: string; label: string; onSave: (goal: string) => void }
 
-/** 주간 목표 한 줄. 비워서 지울 수 있다. 빈칸 문구는 주에 맞춰 "지난주/이번 주/다음 주 목표를 적어 보세요" */
+/** 주간 목표 한 줄. 비워서 지울 수 있다. 빈칸 문구는 주에 맞춰 "지난주/이번 주/다음 주 목표를 적어 봐" */
 function Goal({ goal, label, onSave }: GoalProps) {
   const e = useInlineEdit(goal, onSave, true)
   if (e.editing) return <input key="edit" className="goal-edit" maxLength={40} placeholder={label} aria-label="주간 목표 입력" onBlur={e.finish} {...e.inputProps} />
   return (
     <button key="view" type="button" className={'goal-t' + (goal ? '' : ' ph')} aria-label="주간 목표 고치기" onClick={e.start}>
-      {goal || `${label}를 적어 보세요`}
+      {goal || `${label}를 적어 봐`}
     </button>
   )
 }
@@ -247,6 +290,7 @@ function Goal({ goal, label, onSave }: GoalProps) {
 type RowProps = {
   todo: Todo
   cats: Category[]
+  named: Category[] // 이름 찾기용: 지운 카테고리 포함(라벨은 원래 이름에 회색, TD-3)
   onToggle: (done: boolean) => void
   onSave: (text: string) => void
   onDelete: () => void
@@ -254,7 +298,7 @@ type RowProps = {
 }
 
 /** 체크 · 글자(누르면 수정 칸 + 삭제) · 카테고리 라벨(누르면 다음 카테고리로) */
-function TodoRow({ todo, cats, onToggle, onSave, onDelete, onCycle }: RowProps) {
+function TodoRow({ todo, cats, named, onToggle, onSave, onDelete, onCycle }: RowProps) {
   const e = useInlineEdit(todo.text, onSave)
 
   if (e.editing)
@@ -272,8 +316,8 @@ function TodoRow({ todo, cats, onToggle, onSave, onDelete, onCycle }: RowProps) 
     <div key="view" className={'task' + (todo.done ? ' done' : '')}>
       <input type="checkbox" checked={todo.done} aria-label={todo.text} onChange={(ev) => onToggle(ev.target.checked)} />
       <button type="button" className="t" onClick={e.start}>{todo.text}</button>
-      <button type="button" className="chip" style={catStyle(cats, todo.category_id)} aria-label={`카테고리 바꾸기: 지금 ${catName(cats, todo.category_id)}`} onClick={onCycle}>
-        {catName(cats, todo.category_id)}
+      <button type="button" className="chip" style={catStyle(cats, todo.category_id)} aria-label={`카테고리 바꾸기: 지금 ${catName(named, todo.category_id)}`} onClick={onCycle}>
+        {catName(named, todo.category_id)}
       </button>
     </div>
   )
