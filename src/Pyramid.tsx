@@ -30,7 +30,6 @@ export function Pyramid({ setup, onClose, onSignOut, onError }: Props) {
 
   const weeks = tab === 'all' ? W4 : [tab]
   const st = timeStats(setup.cats, (data?.todos ?? []).filter((x) => weeks.includes(weekStart(x.date))))
-  const v = verdict(st.rows)
 
   return (
     <main className="flow pyramid">
@@ -72,29 +71,33 @@ export function Pyramid({ setup, onClose, onSignOut, onError }: Props) {
             </div>
           </div>
           <p className="py-verdict">
-            {!st.total ? (
-              '아직 기록한 시간이 없어요. 저녁 회고에서 적어 보세요.'
-            ) : !v.over.length && !v.under.length ? (
-              '치우침 없이 정한 비율 가까이 쓰고 있어요.'
-            ) : (
-              <>
-                {v.over.length > 0 && (
-                  <>
-                    <b className="o">{v.over.join('·')}</b>에 많이 {v.under.length ? '썼고 ' : '썼어요.'}
-                  </>
-                )}
-                {v.under.length > 0 && (
-                  <>
-                    <b className="u">{v.under.join('·')}</b>에 덜 썼어요.
-                  </>
-                )}
-              </>
-            )}
+            <Verdict rows={st.rows} total={st.total} />
           </p>
         </>
       )}
       <button type="button" className="py-out" onClick={onSignOut}>로그아웃</button>
     </main>
+  )
+}
+
+/** 판정 한 줄. 많음만/부족만/둘 다를 나눠 쓴다(프로토타입은 많음만 있으면 "…에 많이 썼고 "로 끝났다) */
+export function Verdict({ rows, total }: { rows: Row<Todo>[]; total: number }) {
+  const v = verdict(rows)
+  if (!total) return <>아직 기록한 시간이 없어요. 저녁 회고에서 적어 보세요.</>
+  if (!v.over.length && !v.under.length) return <>치우침 없이 정한 비율 가까이 쓰고 있어요.</>
+  return (
+    <>
+      {v.over.length > 0 && (
+        <>
+          <b className="v-o">{v.over.join('·')}</b>에 많이 {v.under.length ? '썼고 ' : '썼어요.'}
+        </>
+      )}
+      {v.under.length > 0 && (
+        <>
+          <b className="v-u">{v.under.join('·')}</b>에 덜 썼어요.
+        </>
+      )}
+    </>
   )
 }
 

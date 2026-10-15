@@ -82,3 +82,17 @@ export async function loadGoals(from: string, to: string): Promise<Record<string
   const rows = must(await supabase.from('weeks').select('week_start, goal').gte('week_start', from).lte('week_start', to)) as { week_start: string; goal: string }[]
   return Object.fromEntries(rows.map((r) => [r.week_start, r.goal]))
 }
+
+/** 주간 마감에서 기타로 새 카테고리 만들기 */
+export async function addCategory(name: string, ratio: number, position: number): Promise<Category> {
+  return must(await supabase.from('categories').insert({ name, ratio, position }).select('id, name, ratio').single<Category>())
+}
+
+/** 바뀐 비율만 하나씩(최대 5개) */
+export async function setRatios(rows: { id: string; ratio: number }[]): Promise<void> {
+  for (const r of rows) must(await supabase.from('categories').update({ ratio: r.ratio }).eq('id', r.id))
+}
+
+export async function moveTodos(ids: string[], category_id: string): Promise<void> {
+  must(await supabase.from('todos').update({ category_id }).in('id', ids))
+}

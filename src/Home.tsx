@@ -8,16 +8,16 @@ import { Pyramid } from './Pyramid'
 const WD = ['일', '월', '화', '수', '목', '금', '토']
 const GOAL_LABEL = { past: '지난주 목표', current: '이번 주 목표', future: '다음 주 목표' }
 
-type Props = { setup: Setup; onError: (e: unknown) => void; onSignOut: () => void }
+type Props = { setup: Setup; startMonday?: boolean; onError: (e: unknown) => void; onSignOut: () => void }
 type Loaded = { ws: string; todos: Todo[]; goal: string; plan: string }
 
 /** 메인: 핵심목표 → 상단바 → 주간 목표·시간 계획 → 주간 줄 → 일간 목록 → 카테고리 고르기·할 일 입력. 문구는 프로토타입(킥보드 phase2.html) 그대로 */
-export function Home({ setup, onError, onSignOut }: Props) {
+export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   const { cats } = setup
   const t = today()
   const thisWeek = weekStart(t)
   const [ws, setWs] = useState(thisWeek)
-  const [sel, setSel] = useState(t)
+  const [sel, setSel] = useState(startMonday ? thisWeek : t)
   // 어느 주를 불러온 건지 같이 둔다. 주를 빨리 넘길 때 늦게 온 응답이 다른 주를 덮지 않게
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const cur = loaded?.ws === ws ? loaded : null
@@ -192,8 +192,8 @@ export function Home({ setup, onError, onSignOut }: Props) {
   )
 }
 
-/** 요일 + 날짜 달성 링. 마감 흐름에서도 쓴다 */
-export function DayRing({ k, pct }: { k: string; pct: number }) {
+/** 요일 + 날짜 달성 링 */
+function DayRing({ k, pct }: { k: string; pct: number }) {
   const d = parseKey(k)
   return (
     <>

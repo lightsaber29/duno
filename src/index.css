@@ -856,10 +856,10 @@ button.t {
   padding: 8px 10px;
   font-size: 13px;
 }
-.py-verdict .o {
+.v-o {
   color: var(--over);
 }
-.py-verdict .u {
+.v-u {
   color: var(--under);
 }
 .py-out {
@@ -870,4 +870,76 @@ button.t {
   color: var(--muted);
   font-size: 12px;
   padding: 8px;
+}
+
+/* 주간 마감: 회고 모음 · 정리 안 · 새 카테고리 */
+.refl {
+  font-size: 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.opt {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  text-align: left;
+  background: var(--surface);
+}
+.opt[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--soft);
+}
+.opt b {
+  font-size: 14px;
+}
+.wrow {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+.wrow em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--accent);
+}
+.sug {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.sug b {
+  font-size: 14px;
+}
+.acts {
+  display: flex;
+  gap: 6px;
+}
+.acts button {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 6px 0;
+  font-size: 13px;
+}
+.acts button[aria-pressed='true'] {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.acts button.no[aria-pressed='true'] {
+  background: var(--muted);
+  border-color: var(--muted);
 }
