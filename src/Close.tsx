@@ -37,7 +37,7 @@ export function Close({ lw, week, todos, thisGoal, onDone, onError }: Props) {
 
   if (step === 1)
     return (
-      <main className="close">
+      <main className="flow">
         <div className="c-top">
           <span>{weekRange(lw)} 마감</span>
           <button type="button" disabled={busy} onClick={() => finish(true)}>건너뛰기</button>
@@ -72,7 +72,7 @@ export function Close({ lw, week, todos, thisGoal, onDone, onError }: Props) {
     )
 
   return (
-    <main className="close">
+    <main className="flow">
       <div className="c-top">
         <button type="button" onClick={() => setStep(1)}>‹ 이전</button>
         <span>{weekRange(tw)} 시작</span>

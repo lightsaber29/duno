@@ -11,6 +11,23 @@
   --danger: #d92d20;
   --ok: #0e9f6e;
   --ok-soft: #dcf5ea;
+  /* 치우침(많음·부족), 카테고리 5색 + 기타. 글자 --cN, 바탕 --sN */
+  --over: #c2410c;
+  --over-soft: #ffedd5;
+  --under: #1d4ed8;
+  --under-soft: #dbeafe;
+  --c0: #2f54eb;
+  --c1: #0e9f6e;
+  --c2: #e8590c;
+  --c3: #a03fd0;
+  --c4: #d6336c;
+  --cg: #667085;
+  --s0: #e6ebff;
+  --s1: #dcf5ea;
+  --s2: #fde8da;
+  --s3: #f3e3fa;
+  --s4: #fbe0ea;
+  --sg: #eceff3;
   color-scheme: light;
   font-family: 'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', sans-serif;
   font-size: 15px;
@@ -31,6 +48,22 @@
     --danger: #ff6b63;
     --ok: #5fdcaa;
     --ok-soft: #163a2c;
+    --over: #ffa06a;
+    --over-soft: #47281a;
+    --under: #8fb4ff;
+    --under-soft: #1c2d52;
+    --c0: #9bb0ff;
+    --c1: #5fdcaa;
+    --c2: #ffa06a;
+    --c3: #d9a0f5;
+    --c4: #ff8fb5;
+    --cg: #9aa4b5;
+    --s0: #222c52;
+    --s1: #163a2c;
+    --s2: #47281a;
+    --s3: #3a2447;
+    --s4: #47212f;
+    --sg: #262c38;
     color-scheme: dark;
   }
 }
@@ -46,6 +79,22 @@
   --danger: #ff6b63;
   --ok: #5fdcaa;
   --ok-soft: #163a2c;
+  --over: #ffa06a;
+  --over-soft: #47281a;
+  --under: #8fb4ff;
+  --under-soft: #1c2d52;
+  --c0: #9bb0ff;
+  --c1: #5fdcaa;
+  --c2: #ffa06a;
+  --c3: #d9a0f5;
+  --c4: #ff8fb5;
+  --cg: #9aa4b5;
+  --s0: #222c52;
+  --s1: #163a2c;
+  --s2: #47281a;
+  --s3: #3a2447;
+  --s4: #47212f;
+  --sg: #262c38;
   color-scheme: dark;
 }
 * {
@@ -343,8 +392,8 @@ button.t {
   padding: 0 14px;
 }
 
-/* 주간 마감 흐름 */
-.close {
+/* 주간 마감·진입 흐름 */
+.flow {
   min-height: 100dvh;
   max-width: 480px;
   margin: 0 auto;
@@ -450,4 +499,70 @@ button.t {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+}
+.f-h {
+  font-size: 18px;
+  line-height: 1.35;
+  margin: 0;
+}
+.flow input[type='text'],
+.flow input[type='number'] {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 16px; /* 16px 미만이면 iOS가 확대함 */
+}
+.flow input.f-big {
+  font-size: 17px;
+  font-weight: 700;
+}
+.c-main:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.ob-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.ob-row input[type='text'] {
+  flex: 1;
+  min-width: 0;
+}
+.ob-row input[type='number'] {
+  width: 64px;
+  text-align: right;
+}
+.ob-row .x {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+  width: 28px;
+}
+.ob-row .x:disabled {
+  opacity: 0.3;
+}
+.ob-btns {
+  display: flex;
+  gap: 6px;
+}
+.ob-btns button {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.ob-btns button:disabled {
+  opacity: 0.4;
+}
+.ob-sum {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+.ob-sum.bad {
+  color: var(--over);
 }

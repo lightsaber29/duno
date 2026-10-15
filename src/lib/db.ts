@@ -42,3 +42,26 @@ export async function closeWeek(weekStart: string, review?: { good: string; bad:
 export async function saveWeek(weekStart: string, patch: Partial<Week>): Promise<void> {
   must(await supabase.from('weeks').upsert({ week_start: weekStart, ...patch }, { onConflict: 'user_id,week_start' }))
 }
+
+export type Category = { id: string; name: string; ratio: number }
+export type Setup = { coreGoal: string; cats: Category[] }
+
+/** 핵심목표와 카테고리. 핵심목표가 없으면 null → 진입 화면 */
+export async function loadSetup(): Promise<Setup | null> {
+  const p = must(await supabase.from('profiles').select('core_goal').maybeSingle<{ core_goal: string }>())
+  if (!p) return null
+  const cats = must(await supabase.from('categories').select('id, name, ratio').order('position')) as Category[]
+  return { coreGoal: p.core_goal, cats }
+}
+
+/** 진입 화면 끝. 카테고리 → 핵심목표 순서라 중간에 끊기면 다음에 진입 화면이 다시 뜬다 */
+export async function createSetup(coreGoal: string, cats: { name: string; ratio: number }[]): Promise<Setup> {
+  // 진입은 핵심목표가 없을 때만 오니, 지난번에 끊겨 남은 카테고리가 있으면 지우고 새로 넣는다.
+  // 조건 없는 delete는 Supabase(safeupdate)가 막아서 항상 참인 조건을 단다
+  must(await supabase.from('categories').delete().not('id', 'is', null))
+  const rows = must(
+    await supabase.from('categories').insert(cats.map((c, i) => ({ ...c, position: i }))).select('id, name, ratio').order('position'),
+  ) as Category[]
+  must(await supabase.from('profiles').insert({ core_goal: coreGoal }))
+  return { coreGoal, cats: rows }
+}
