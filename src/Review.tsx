@@ -36,7 +36,7 @@ export function Review({ cats, named, onClose, onError }: Props) {
   }, [onError])
 
   const list = todos ?? []
-  const sum = timeStats(cats, list)
+  const sum = timeStats(cats, list, named.filter((c) => !cats.includes(c)).map((c) => c.id)) // 지운 카테고리 시간은 합계에만, 기타로 보이지 않게(TD-4)
   const total = list.reduce((a, x) => a + x.minutes, 0)
   const over = total > DAY
   const dirty = list.some((x) => saved[x.id] !== x.minutes) || note.trim() !== savedNote
