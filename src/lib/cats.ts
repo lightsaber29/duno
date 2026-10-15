@@ -8,9 +8,3 @@ export function catStyle(cats: Category[], id: string | null) {
   const i = cats.findIndex((c) => c.id === id)
   return i < 0 ? { background: 'var(--sg)', color: 'var(--cg)' } : { background: `var(--s${i % 5})`, color: `var(--c${i % 5})` }
 }
-
-/** 라벨을 누르면 다음 카테고리로. 기타 다음은 첫 번째, 모르는 id도 첫 번째 */
-export function nextCat(cats: Category[], id: string | null): string | null {
-  const ids = [...cats.map((c) => c.id), null]
-  return ids[(ids.indexOf(id) + 1) % ids.length]
-}
