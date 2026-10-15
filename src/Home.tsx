@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { addTodo, deleteTodo, loadTodos, loadWeek, saveWeek, updateTodo, type Category, type Setup, type Todo } from './lib/db'
 import { catName, catStyle, nextCat } from './lib/cats'
-import { addDays, parseKey, rate, today, weekDays, weekKind, weekRange, weekStart } from './lib/week'
+import { addDays, isEvening, parseKey, rate, today, weekDays, weekKind, weekRange, weekStart } from './lib/week'
+import { Review } from './Review'
 
 const WD = ['일', '월', '화', '수', '목', '금', '토']
 const GOAL_LABEL = { past: '지난주 목표', current: '이번 주 목표', future: '다음 주 목표' }
@@ -21,6 +22,8 @@ export function Home({ setup, onError, onSignOut }: Props) {
   const cur = loaded?.ws === ws ? loaded : null
   const [draft, setDraft] = useState('')
   const [pick, setPick] = useState<string | null>(cats[0]?.id ?? null) // 새 할 일 카테고리. 마지막으로 고른 것
+  const [review, setReview] = useState(false)
+  const [version, setVersion] = useState(0) // 회고에서 돌아오면 다시 불러오기
   const addRef = useRef<HTMLInputElement>(null)
 
   const reload = useCallback(
@@ -30,9 +33,10 @@ export function Home({ setup, onError, onSignOut }: Props) {
         .catch(onError),
     [ws, onError],
   )
+  // version: 회고에서 돌아오면 같은 주라도 다시 불러온다
   useEffect(() => {
     reload()
-  }, [reload])
+  }, [reload, version])
 
   const kind = weekKind(ws, t)
   const days = weekDays(ws)
@@ -68,10 +72,31 @@ export function Home({ setup, onError, onSignOut }: Props) {
     }
   }
 
+  if (review)
+    return (
+      <Review
+        cats={cats}
+        onError={onError}
+        onClose={(date) => {
+          setReview(false)
+          setWs(weekStart(date))
+          setSel(date)
+          setVersion((v) => v + 1)
+        }}
+      />
+    )
+
   const s = parseKey(sel)
   const list = of(sel)
+  // N1: 실제 알림 대신, 9시 이후 열었는데 오늘 시간이 하나도 안 적혀 있으면 띠
+  const nudge = ws === thisWeek && cur && isEvening() && of(t).every((x) => x.minutes === 0)
   return (
     <main className="home">
+      {nudge && (
+        <button type="button" className="nudge" onClick={() => setReview(true)}>
+          오늘 회고를 적어 보세요 ›
+        </button>
+      )}
       <header className="vis">
         <small>핵심목표</small>
         <b>{setup.coreGoal}</b>
@@ -85,6 +110,7 @@ export function Home({ setup, onError, onSignOut }: Props) {
           </span>
           <span>
             {ws !== thisWeek && <button type="button" className="now" onClick={() => goWeek(0)}>이번 주로</button>}
+            <button type="button" className="pill" onClick={() => setReview(true)}>회고</button>
             <button type="button" className="out" onClick={onSignOut}>로그아웃</button>
           </span>
         </div>

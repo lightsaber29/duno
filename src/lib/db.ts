@@ -14,8 +14,9 @@ export async function loadTodos(from: string, to: string): Promise<Todo[]> {
   return must(await supabase.from('todos').select(COLS).gte('date', from).lte('date', to).order('created_at')) as Todo[]
 }
 
-export async function addTodo(date: string, text: string, category_id: string | null): Promise<Todo> {
-  return must(await supabase.from('todos').insert({ date, text, category_id }).select(COLS).single<Todo>())
+/** more: 회고에서 바로 추가하는 일은 체크된 채 시간과 함께 */
+export async function addTodo(date: string, text: string, category_id: string | null, more: Partial<Pick<Todo, 'done' | 'minutes'>> = {}): Promise<Todo> {
+  return must(await supabase.from('todos').insert({ date, text, category_id, ...more }).select(COLS).single<Todo>())
 }
 
 export async function updateTodo(id: string, patch: Partial<Pick<Todo, 'text' | 'done' | 'category_id' | 'minutes'>>): Promise<void> {
@@ -64,4 +65,14 @@ export async function createSetup(coreGoal: string, cats: { name: string; ratio:
   ) as Category[]
   must(await supabase.from('profiles').insert({ core_goal: coreGoal }))
   return { coreGoal, cats: rows }
+}
+
+/** from~to 회고 한 줄. 날짜 → 글 */
+export async function loadNotes(from: string, to: string): Promise<Record<string, string>> {
+  const rows = must(await supabase.from('days').select('date, note').gte('date', from).lte('date', to)) as { date: string; note: string }[]
+  return Object.fromEntries(rows.map((r) => [r.date, r.note]))
+}
+
+export async function saveNote(date: string, note: string): Promise<void> {
+  must(await supabase.from('days').upsert({ date, note }, { onConflict: 'user_id,date' }))
 }

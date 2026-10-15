@@ -7,6 +7,8 @@ export const parseKey = (k: string) => {
   return new Date(y, m - 1, d)
 }
 export const today = () => toKey(new Date())
+/** 저녁 9시 이후 (회고 안내 띠) */
+export const isEvening = () => new Date().getHours() >= 21
 
 export function addDays(k: string, n: number): string {
   const d = parseKey(k)

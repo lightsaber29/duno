@@ -603,3 +603,112 @@ button.t {
 .ob-sum.bad {
   color: var(--over);
 }
+
+/* 상단바 버튼 · 회고 안내 띠 */
+.wk-h .pill {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 1px 9px;
+  margin-left: 4px;
+}
+.nudge {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+/* 저녁 회고 */
+.review {
+  gap: 8px;
+}
+.rv-tabs {
+  display: flex;
+  gap: 4px;
+}
+.rv-tabs button {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 5px 0;
+  font-size: 12px;
+}
+.rv-tabs button[aria-pressed='true'] {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.rv-row {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg);
+}
+.rv-t {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rv-t .tx {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rv-t .ck {
+  font-size: 11px;
+  color: var(--ok);
+  font-weight: 700;
+  flex: none;
+}
+.hm {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.flow .hm input[type='number'] {
+  width: 56px;
+  padding: 5px 6px;
+  text-align: right;
+  background: var(--surface);
+}
+.rv-add {
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rv-add .picks {
+  margin: 0;
+}
+.rv-add-h {
+  font-size: 13px;
+  font-weight: 700;
+}
+.rv-add-btn {
+  margin-left: auto;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 13px;
+}
+.rv-sum {
+  background: var(--soft);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
