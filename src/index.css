@@ -943,3 +943,40 @@ button.t {
   background: var(--muted);
   border-color: var(--muted);
 }
+
+/* 할 일 입력 권유 */
+.nudge-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  background: var(--under-soft);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 7px 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.nudge-bar > span {
+  flex-basis: 100%;
+}
+.nudge-take {
+  border: 1px solid var(--under);
+  background: var(--surface);
+  color: var(--under);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.nudge-close {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 3px 4px;
+}

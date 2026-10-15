@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { addTodo, deleteTodo, loadTodos, loadWeek, saveWeek, updateTodo, type Category, type Setup, type Todo } from './lib/db'
+import { addTodo, closeNudge, deleteTodo, loadNudgeClosed, loadTodos, loadWeek, saveWeek, updateTodo, type Category, type Setup, type Todo } from './lib/db'
 import { catName, catStyle, nextCat } from './lib/cats'
+import { fmtMinutes, nudge } from './lib/pyramid'
 import { addDays, isEvening, parseKey, rate, today, weekDays, weekKind, weekRange, weekStart } from './lib/week'
 import { Review } from './Review'
 import { Pyramid } from './Pyramid'
@@ -39,6 +40,37 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   useEffect(() => {
     reload()
   }, [reload, version])
+
+  // 할 일 입력 권유(phase3 4.5): 지금까지 기록 전부와 오늘 닫았는지. 회고에서 돌아오면 다시
+  const [nudgeData, setNudgeData] = useState<{ todos: Todo[]; closed: boolean } | null>(null)
+  useEffect(() => {
+    Promise.all([loadTodos('1970-01-01', t), loadNudgeClosed(t)])
+      .then(([todos, closed]) => setNudgeData({ todos, closed }))
+      .catch(onError)
+  }, [t, version, onError])
+  // 권유는 "오늘" 목록에 더하니(NU-7) 오늘을 볼 때만
+  const suggestion = nudgeData && !nudgeData.closed && sel === t ? nudge(cats, nudgeData.todos) : null
+
+  function dismissNudge() {
+    setNudgeData((d) => d && { ...d, closed: true })
+    closeNudge(t).catch(onError)
+  }
+
+  /** 제시한 할 일을 오늘 목록에 더하고 그날 권유는 끝. 할 일 없이 카테고리만이면 그 카테고리를 골라 입력 칸으로 (NU-5) */
+  async function takeNudge(s: NonNullable<typeof suggestion>) {
+    if (!s.todo) {
+      setPick(s.id)
+      addRef.current?.focus()
+      return
+    }
+    try {
+      const row = await addTodo(t, s.todo.text, s.id, { nudged: true })
+      setLoaded((l) => l && mapTodos((ts) => [...ts, row])(l))
+      dismissNudge()
+    } catch (e) {
+      onError(e)
+    }
+  }
 
   const kind = weekKind(ws, t)
   const days = weekDays(ws)
@@ -93,10 +125,10 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   const s = parseKey(sel)
   const list = of(sel)
   // N1: 실제 알림 대신, 9시 이후 열었는데 오늘 시간이 하나도 안 적혀 있으면 띠
-  const nudge = ws === thisWeek && cur && isEvening() && of(t).every((x) => x.minutes === 0)
+  const reviewNudge = ws === thisWeek && cur && isEvening() && of(t).every((x) => x.minutes === 0)
   return (
     <main className="home">
-      {nudge && (
+      {reviewNudge && (
         <button type="button" className="nudge" onClick={() => setReview(true)}>
           오늘 회고를 적어 봐 ›
         </button>
@@ -175,6 +207,15 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
           add()
         }}
       >
+        {suggestion && (
+          <div className="nudge-bar" role="status">
+            <span>{suggestion.name}에 계획보다 시간을 덜 썼어</span>
+            <button type="button" className="nudge-take" onClick={() => takeNudge(suggestion)}>
+              {suggestion.todo ? `+ ${suggestion.todo.text} ${fmtMinutes(suggestion.todo.minutes)}` : `+ ${suggestion.name} 할 일 적기`}
+            </button>
+            <button type="button" className="nudge-close" onClick={dismissNudge}>닫기</button>
+          </div>
+        )}
         <div className="picks" role="group" aria-label="카테고리 고르기">
           {[...cats.map((c) => c.id), null].map((id) => (
             <button key={id ?? 'etc'} type="button" className="pick" style={catStyle(cats, id)} aria-pressed={pick === id} onClick={() => setPick(id)}>

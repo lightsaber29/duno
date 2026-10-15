@@ -15,8 +15,13 @@ export async function loadTodos(from: string, to: string): Promise<Todo[]> {
   return must(await supabase.from('todos').select(COLS).gte('date', from).lte('date', to).order('created_at')) as Todo[]
 }
 
-/** more: 회고에서 바로 추가하는 일은 체크된 채 시간과 함께 */
-export async function addTodo(date: string, text: string, category_id: string | null, more: Partial<Pick<Todo, 'done' | 'minutes'>> = {}): Promise<Todo> {
+/** more: 회고에서 바로 추가하는 일은 체크된 채 시간과 함께, 권유로 추가하는 일은 nudged(성공 판단용, NU-8) */
+export async function addTodo(
+  date: string,
+  text: string,
+  category_id: string | null,
+  more: Partial<Pick<Todo, 'done' | 'minutes'>> & { nudged?: boolean } = {},
+): Promise<Todo> {
   return must(await supabase.from('todos').insert({ date, text, category_id, ...more }).select(COLS).single<Todo>())
 }
 
@@ -105,4 +110,15 @@ export async function moveTodos(ids: string[], category_id: string): Promise<voi
 /** 지금까지 정한 주간 비율 전부(작다: 주 × 카테고리) */
 export async function loadWeekRatios(): Promise<WeekRatio[]> {
   return must(await supabase.from('week_ratios').select('week_start, category_id, ratio')) as WeekRatio[]
+}
+
+/** 그날 할 일 입력 권유를 닫았는지(NU-6) */
+export async function loadNudgeClosed(date: string): Promise<boolean> {
+  const row = must(await supabase.from('days').select('nudge_closed').eq('date', date).maybeSingle<{ nudge_closed: boolean }>())
+  return row?.nudge_closed ?? false
+}
+
+/** 그날 권유를 닫는다. 회고 한 줄은 그대로 */
+export async function closeNudge(date: string): Promise<void> {
+  must(await supabase.from('days').upsert({ date, nudge_closed: true }, { onConflict: 'user_id,date' }))
 }
