@@ -27,11 +27,11 @@ export async function deleteTodo(id: string): Promise<void> {
   must(await supabase.from('todos').delete().eq('id', id))
 }
 
-export type Week = { goal: string; good: string; bad: string; closed_at: string | null; time_plan: string }
+export type Week = { goal: string; good: string; bad: string; closed_at: string | null; time_plan: string; target_minutes: number | null }
 
 /** 그 주 행. 아직 안 만들어졌으면 null */
 export async function loadWeek(weekStart: string): Promise<Week | null> {
-  return must(await supabase.from('weeks').select('goal, good, bad, closed_at, time_plan').eq('week_start', weekStart).maybeSingle<Week>())
+  return must(await supabase.from('weeks').select('goal, good, bad, closed_at, time_plan, target_minutes').eq('week_start', weekStart).maybeSingle<Week>())
 }
 
 /** 마감 흐름을 끝냈거나 건너뛴 표시. 회고 한 줄도 같이 저장 */
@@ -55,14 +55,18 @@ export async function loadSetup(): Promise<Setup | null> {
   return { coreGoal: p.core_goal, cats }
 }
 
-/** 진입 화면 끝. 카테고리 → 핵심목표 순서라 중간에 끊기면 다음에 진입 화면이 다시 뜬다 */
-export async function createSetup(coreGoal: string, cats: { name: string; ratio: number }[]): Promise<Setup> {
+/**
+ * 진입 화면 끝. 카테고리 → 주간 목표 시간(이번 주부터) → 핵심목표 순서라, 중간에 끊기면 다음에 진입 화면이 다시 뜬다.
+ * target: 이번 주 월요일과 주간 목표 시간(분)
+ */
+export async function createSetup(coreGoal: string, cats: { name: string; ratio: number }[], target: { week: string; minutes: number }): Promise<Setup> {
   // 진입은 핵심목표가 없을 때만 오니, 지난번에 끊겨 남은 카테고리가 있으면 지우고 새로 넣는다.
   // 조건 없는 delete는 Supabase(safeupdate)가 막아서 항상 참인 조건을 단다
   must(await supabase.from('categories').delete().not('id', 'is', null))
   const rows = must(
     await supabase.from('categories').insert(cats.map((c, i) => ({ ...c, position: i }))).select('id, name, ratio').order('position'),
   ) as Category[]
+  await saveWeek(target.week, { target_minutes: target.minutes })
   must(await supabase.from('profiles').insert({ core_goal: coreGoal }))
   return { coreGoal, cats: rows }
 }

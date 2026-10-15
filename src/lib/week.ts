@@ -47,3 +47,10 @@ export function shouldClose(lastWeek: { goal: string; closed_at: string | null }
   if (lastWeek?.closed_at) return false
   return lastWeekTodoCount > 0 || !!lastWeek?.goal
 }
+
+/** 주간 목표 시간 입력(시간, 0.5 단위, 1~100) → 분. 맞지 않으면 null */
+export function targetMinutes(hours: string): number | null {
+  const h = Number(hours)
+  if (!hours.trim() || !Number.isFinite(h) || h < 1 || h > 100 || !Number.isInteger(h * 2)) return null
+  return h * 60
+}
