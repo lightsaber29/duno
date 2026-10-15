@@ -48,5 +48,7 @@ function Signed({ onError }: { onError: (e: unknown) => void }) {
   if (setup === undefined || close === undefined) return null
   if (!setup) return <Onboard onDone={setSetup} onError={onError} />
   if (close) return <Close {...close} onDone={() => setClose(null)} onError={onError} />
-  return <Home setup={setup} onError={onError} onSignOut={() => supabase.auth.signOut()} />
+  // 실패(네트워크 등)하면 버튼이 안 먹는 것처럼 보이지 않게 오류를 띄운다
+  const signOut = () => supabase.auth.signOut().then(({ error }) => error && onError(error))
+  return <Home setup={setup} onError={onError} onSignOut={signOut} />
 }
