@@ -149,7 +149,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
           <span>
             {ws !== thisWeek && <button type="button" className="now" onClick={() => goWeek(0)}>이번 주로</button>}
             <button type="button" className="pill" onClick={() => setReview(true)}>회고</button>
-            <button type="button" className="pill" aria-label="피라미드" onClick={() => setPyramid(true)}>△</button>
+            <button type="button" className="pill" aria-label="편향 보기" onClick={() => setPyramid(true)}>△</button>
           </span>
         </div>
         <div className="goal">

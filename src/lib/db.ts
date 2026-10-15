@@ -53,23 +53,28 @@ export async function saveWeek(weekStart: string, patch: Partial<Week>): Promise
 }
 
 export type Category = { id: string; name: string; ratio: number }
-/** cats: 지우지 않은 카테고리(핵심목표 비율), gone: 지운 카테고리(라벨 이름 보이기용, TD-3) */
-export type Setup = { coreGoal: string; cats: Category[]; gone: Category[] }
+/** cats: 지우지 않은 카테고리(핵심목표 비율), gone: 지운 카테고리(라벨 이름·분모용), startedOn: 진입일("지금까지"의 시작, BI-3) */
+export type Setup = { coreGoal: string; cats: Category[]; gone: Category[]; startedOn: string }
 
 /** 핵심목표와 카테고리. 핵심목표가 없으면 null → 진입 화면 */
 export async function loadSetup(): Promise<Setup | null> {
-  const p = must(await supabase.from('profiles').select('core_goal').maybeSingle<{ core_goal: string }>())
+  const p = must(await supabase.from('profiles').select('core_goal, started_on').maybeSingle<{ core_goal: string; started_on: string }>())
   if (!p) return null
   const rows = must(await supabase.from('categories').select('id, name, ratio, deleted_at').order('position')) as (Category & { deleted_at: string | null })[]
   const pick = (gone: boolean) => rows.filter((r) => !!r.deleted_at === gone).map(({ id, name, ratio }) => ({ id, name, ratio }))
-  return { coreGoal: p.core_goal, cats: pick(false), gone: pick(true) }
+  return { coreGoal: p.core_goal, cats: pick(false), gone: pick(true), startedOn: p.started_on }
 }
 
 /**
  * 진입 화면 끝. 카테고리 → 주간 목표 시간(이번 주부터) → 핵심목표 순서라, 중간에 끊기면 다음에 진입 화면이 다시 뜬다.
- * target: 이번 주 월요일과 주간 목표 시간(분)
+ * target: 이번 주 월요일과 주간 목표 시간(분), startedOn: 진입일(기기 날짜, 할 일 날짜와 같은 기준)
  */
-export async function createSetup(coreGoal: string, cats: { name: string; ratio: number }[], target: { week: string; minutes: number }): Promise<Setup> {
+export async function createSetup(
+  coreGoal: string,
+  cats: { name: string; ratio: number }[],
+  target: { week: string; minutes: number },
+  startedOn: string,
+): Promise<Setup> {
   // 진입은 핵심목표가 없을 때만 오니, 지난번에 끊겨 남은 카테고리가 있으면 지우고 새로 넣는다.
   // 조건 없는 delete는 Supabase(safeupdate)가 막아서 항상 참인 조건을 단다
   must(await supabase.from('categories').delete().not('id', 'is', null))
@@ -77,8 +82,8 @@ export async function createSetup(coreGoal: string, cats: { name: string; ratio:
     await supabase.from('categories').insert(cats.map((c, i) => ({ ...c, position: i }))).select('id, name, ratio').order('position'),
   ) as Category[]
   await saveWeek(target.week, { target_minutes: target.minutes })
-  must(await supabase.from('profiles').insert({ core_goal: coreGoal }))
-  return { coreGoal, cats: rows, gone: [] }
+  must(await supabase.from('profiles').insert({ core_goal: coreGoal, started_on: startedOn }))
+  return { coreGoal, cats: rows, gone: [], startedOn }
 }
 
 /** from~to 회고 한 줄. 날짜 → 글 */

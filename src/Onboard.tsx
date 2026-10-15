@@ -27,7 +27,7 @@ export function Onboard({ onDone, onError }: Props) {
     setBusy(true)
     try {
       const target = { week: weekStart(today()), minutes: targetMinutes(hours)! }
-      onDone(await createSetup(goal.trim(), rows.map((r) => ({ name: r.name.trim(), ratio: r.ratio })), target))
+      onDone(await createSetup(goal.trim(), rows.map((r) => ({ name: r.name.trim(), ratio: r.ratio })), target, today()))
     } catch (e) {
       onError(e)
       setBusy(false)
