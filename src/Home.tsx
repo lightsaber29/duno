@@ -90,7 +90,7 @@ export function Home({ setup, onError, onSignOut }: Props) {
         </div>
         <div className="goal">
           <small>{GOAL_LABEL[kind]}</small>
-          {cur && <Goal key={ws} goal={cur.goal} onSave={(goal) => act((l) => ({ ...l, goal }), saveWeek(ws, { goal }))} />}
+          {cur && <Goal key={ws} goal={cur.goal} label={GOAL_LABEL[kind]} onSave={(goal) => act((l) => ({ ...l, goal }), saveWeek(ws, { goal }))} />}
           {cur?.plan && <p className="focus">시간 계획: {cur.plan}</p>}
         </div>
         <div className="days">
@@ -201,15 +201,15 @@ function useInlineEdit(value: string, onSave: (v: string) => void, allowEmpty = 
   return { editing: edit !== null, start: () => setEdit(value), finish, inputProps }
 }
 
-type GoalProps = { goal: string; onSave: (goal: string) => void }
+type GoalProps = { goal: string; label: string; onSave: (goal: string) => void }
 
-/** 주간 목표 한 줄. 비워서 지울 수 있다 */
-function Goal({ goal, onSave }: GoalProps) {
+/** 주간 목표 한 줄. 비워서 지울 수 있다. 빈칸 문구는 주에 맞춰 "지난주/이번 주/다음 주 목표를 적어 보세요" */
+function Goal({ goal, label, onSave }: GoalProps) {
   const e = useInlineEdit(goal, onSave, true)
-  if (e.editing) return <input key="edit" className="goal-edit" maxLength={40} placeholder="이번 주 목표" aria-label="주간 목표 입력" onBlur={e.finish} {...e.inputProps} />
+  if (e.editing) return <input key="edit" className="goal-edit" maxLength={40} placeholder={label} aria-label="주간 목표 입력" onBlur={e.finish} {...e.inputProps} />
   return (
     <button key="view" type="button" className={'goal-t' + (goal ? '' : ' ph')} aria-label="주간 목표 고치기" onClick={e.start}>
-      {goal || '이번 주 목표를 적어 보세요'}
+      {goal || `${label}를 적어 보세요`}
     </button>
   )
 }
