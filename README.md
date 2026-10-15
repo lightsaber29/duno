@@ -12,6 +12,7 @@ AI 네이티브 커리어 캠프 3차 프로젝트
 5. `npm install && npm run dev`
 
 `npm test`: 주 계산(`src/lib/week.ts`) 테스트
+`supabase/seed.sql`: 테스트용 더미 데이터. 앱에서 한 번 로그인한 뒤 SQL Editor에서 실행. 가장 최근에 로그인한 사용자의 기록을 지우고 지난주·이번 주·다음 주 예시를 넣는다(다시 실행하면 처음 상태로).
 
 ## Google 로그인 설정
 1. Supabase > Authentication > Providers > Google을 열고 "Callback URL"을 복사해 둔다.
