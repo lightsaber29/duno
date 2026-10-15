@@ -2,7 +2,7 @@
 // 규칙 근거: docs/스케이트보드 phase1.md "확정 사항", docs/스케이트보드 phase1 개발 계획.md
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { addDays, isReadOnly, rate, shouldClose, weekDays, weekKind, weekRange, weekStart } from './week.ts'
+import { addDays, rate, shouldClose, weekDays, weekKind, weekRange, weekStart } from './week.ts'
 
 test('주 시작은 월요일: 월·수·일 모두 같은 월요일', () => {
   assert.equal(weekStart('2026-10-12'), '2026-10-12') // 월
@@ -24,15 +24,6 @@ test('지난주·이번 주·다음 주', () => {
   assert.equal(weekKind('2026-10-05', t), 'past')
   assert.equal(weekKind('2026-10-12', t), 'current')
   assert.equal(weekKind('2026-10-19', t), 'future')
-})
-
-test('읽기 전용: 이번 주 월요일보다 앞선 날짜만', () => {
-  const t = '2026-10-15'
-  assert.equal(isReadOnly('2026-10-11', t), true) // 지난 일요일
-  assert.equal(isReadOnly('2026-10-12', t), false) // 이번 주 월요일
-  assert.equal(isReadOnly('2026-10-14', t), false) // 어제라도 이번 주면 수정 가능
-  assert.equal(isReadOnly('2026-10-20', t), false) // 다음 주
-  assert.equal(isReadOnly('2026-10-18', '2026-10-19'), true) // 월요일이 되면 지난 일요일은 잠김
 })
 
 test('완료율: 그 주 전체 중 체크한 비율, 반올림, 없으면 0', () => {

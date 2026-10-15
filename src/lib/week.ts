@@ -7,6 +7,8 @@ export const parseKey = (k: string) => {
   return new Date(y, m - 1, d)
 }
 export const today = () => toKey(new Date())
+/** 저녁 9시 이후 (회고 안내 띠) */
+export const isEvening = () => new Date().getHours() >= 21
 
 export function addDays(k: string, n: number): string {
   const d = parseKey(k)
@@ -33,9 +35,6 @@ export function weekKind(ws: string, todayKey: string): WeekKind {
   const cur = weekStart(todayKey)
   return ws < cur ? 'past' : ws === cur ? 'current' : 'future'
 }
-
-/** 이번 주보다 앞선 날짜는 읽기 전용 (지난 완료율이 바뀌지 않게) */
-export const isReadOnly = (k: string, todayKey: string) => k < weekStart(todayKey)
 
 /** 완료율. 할 일이 없으면 0% */
 export function rate(todos: { done: boolean }[]) {

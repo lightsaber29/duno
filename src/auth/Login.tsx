@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-/** Google 로그인. 문구는 원페이저 한 줄 요약. 설정은 README 참고. */
+/** Google 로그인. 문구는 phase2 원페이저(킥보드 phase2.md) "무엇을 왜 만드나" 첫 문장에서. 설정은 README 참고. */
 export function Login() {
   const [error, setError] = useState('')
 
@@ -16,8 +16,8 @@ export function Login() {
   return (
     <main className="login">
       <span className="logo">DUNO</span>
-      <h1>날짜별로 할 일을 기록해요</h1>
-      <p>핸드폰 한 화면에서 그 주와 그날을 함께 봐요</p>
+      <h1>핵심목표를 위해 시간을 어디에 쓰는지 봐요</h1>
+      <p>저녁마다 쓴 시간을 적으면 어느 쪽으로 쏠렸는지 보여 줘요</p>
       <button type="button" className="primary" onClick={go}>
         Google로 로그인
       </button>

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>핵심목표 피라미드 투두 1단계 프로토타입</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#e9edf3; --bg:#f5f7fa; --surface:#fff; --ink:#1b2230; --muted:#667085; --line:#dde2ea; --frame:#1d2330;
+  --accent:#2f54eb; --soft:#e6ebff; --done:#98a2b3; --ok:#0e9f6e; --ok-soft:#dcf5ea; --over:#c2410c; --over-soft:#ffedd5; --under:#1d4ed8; --under-soft:#dbeafe;
+  --c0:#2f54eb; --c1:#0e9f6e; --c2:#e8590c; --c3:#a03fd0; --c4:#d6336c; --cg:#667085;
+  --s0:#e6ebff; --s1:#dcf5ea; --s2:#fde8da; --s3:#f3e3fa; --s4:#fbe0ea; --sg:#eceff3;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --page:#0b0e13; --bg:#12161d; --surface:#1a1f29; --ink:#e8ecf3; --muted:#9aa4b5; --line:#2b3240; --frame:#000;
+  --accent:#7b96ff; --soft:#222c52; --done:#6b7588; --ok:#5fdcaa; --ok-soft:#163a2c; --over:#ffa06a; --over-soft:#47281a; --under:#8fb4ff; --under-soft:#1c2d52;
+  --c0:#9bb0ff; --c1:#5fdcaa; --c2:#ffa06a; --c3:#d9a0f5; --c4:#ff8fb5; --cg:#9aa4b5;
+  --s0:#222c52; --s1:#163a2c; --s2:#47281a; --s3:#3a2447; --s4:#47212f; --sg:#262c38;}}
+:root[data-theme="dark"]{
+  --page:#0b0e13; --bg:#12161d; --surface:#1a1f29; --ink:#e8ecf3; --muted:#9aa4b5; --line:#2b3240; --frame:#000;
+  --accent:#7b96ff; --soft:#222c52; --done:#6b7588; --ok:#5fdcaa; --ok-soft:#163a2c; --over:#ffa06a; --over-soft:#47281a; --under:#8fb4ff; --under-soft:#1c2d52;
+  --c0:#9bb0ff; --c1:#5fdcaa; --c2:#ffa06a; --c3:#d9a0f5; --c4:#ff8fb5; --cg:#9aa4b5;
+  --s0:#222c52; --s1:#163a2c; --s2:#47281a; --s3:#3a2447; --s4:#47212f; --sg:#262c38;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo',sans-serif;font-size:15px;line-height:1.5}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 60px;display:grid;grid-template-columns:316px 1fr;gap:28px;align-items:start}
+@media (max-width:760px){.wrap{grid-template-columns:1fr;justify-items:center}.side{width:100%}}
+.side h1{font-size:21px;margin:0 0 6px}
+.side .lead{color:var(--muted);margin:0 0 14px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.pill{border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:999px;padding:6px 14px;font-size:14px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:14px}
+.box h3{margin:0 0 6px;font-size:15px}
+.box ol,.box ul{margin:0;padding-left:20px}
+.box li{margin:3px 0}
+.plan details{border-top:1px solid var(--line);padding:8px 0}
+.plan details:first-of-type{border-top:0}
+.plan summary{cursor:pointer;font-weight:700;font-size:14px}
+.plan p{margin:6px 0}
+.plan .meta{font-size:12px;color:var(--muted);margin:0 0 6px}
+.plan a{color:var(--accent)}
+.tw{overflow-x:auto;margin-top:6px}
+.plan table{border-collapse:collapse;font-size:13px;min-width:100%}
+.plan th,.plan td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}
+.plan th{background:var(--bg);font-weight:700}
+.plan .tag{font-size:11px;color:var(--over);font-weight:700}
+.flow{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;white-space:pre;overflow-x:auto;background:var(--bg);border-radius:8px;padding:10px;margin:6px 0 0}
+
+/* phone */
+.phone{width:300px;height:640px;border:8px solid var(--frame);border-radius:38px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;flex:none}
+.scr{flex:1;overflow:auto;display:flex;flex-direction:column}
+.vis{background:var(--surface);padding:24px 12px 6px;text-align:center}
+.vis small{display:block;font-size:10px;color:var(--muted)}
+.vis b{font-size:15px;line-height:1.35}
+.p-week{background:var(--surface);border-bottom:1px solid var(--line);padding:0 10px 8px}
+.wk-h{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:700;margin:0 -10px;padding:6px 10px 8px;border-bottom:1px solid var(--line);gap:6px}
+.wk-h button{border:0;background:none;color:var(--muted);padding:0 6px;font-size:15px}
+.wk-h .pyr{font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 9px;font-weight:500}
+.gA{padding:10px 4px 10px}
+.gA small{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.goal-t{font-size:17px;font-weight:700;line-height:1.35}
+.goal-t.ph{color:var(--done);font-weight:500}
+.gtap{all:unset;cursor:text;display:block;width:100%}
+.goal-edit{width:100%;border:1px solid var(--accent);border-radius:8px;padding:4px 8px;font-size:17px;font-weight:700;background:var(--bg)}
+.badge{font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.badge.live{background:var(--soft);color:var(--accent)}
+.badge.final{background:var(--ok-soft);color:var(--ok)}
+.badge.wait{background:var(--line);color:var(--muted)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dbtn{border:0;background:none;border-radius:10px;padding:4px 0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted)}
+.dbtn[aria-pressed="true"]{background:var(--soft)}
+.dbtn.today{color:var(--accent);font-weight:700}
+.ring{width:26px;height:26px;border-radius:50%;display:grid;place-items:center}
+.ring span{width:20px;height:20px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink)}
+.p-day{flex:1;overflow:auto;padding:10px 12px}
+.p-day h4{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:500}
+.task{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:14px}
+.task input{width:18px;height:18px;margin:0;accent-color:var(--accent);flex:none}
+.task .t{flex:1;min-width:0}
+.task.done .t{color:var(--done);text-decoration:line-through}
+.chip{font-size:11px;font-weight:500;padding:1px 8px;border-radius:999px;white-space:nowrap;flex:none;border:0}
+.chip.auto{box-shadow:0 0 0 1.5px currentColor}
+.task.done .chip{opacity:.55}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:20px 0}
+.p-add{background:var(--surface);border-top:1px solid var(--line);padding:8px 10px 14px}
+.addrow{display:flex;gap:6px}
+.addrow input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px;font-size:14px}
+.addrow button{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:0 12px;font-size:14px}
+.hint{font-size:11px;color:var(--muted);margin-top:5px}
+.picks{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.pick{border:1.5px solid transparent;border-radius:999px;padding:1px 10px;font-size:12px}
+.pick[aria-pressed="true"]{border-color:currentColor;font-weight:700}
+
+/* shared flow screens */
+.flowscr{flex:1;overflow:auto;padding:26px 14px 14px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+.top button{border:0;background:none;color:var(--muted);font-size:13px;padding:0}
+.flowscr h2{font-size:18px;margin:0;line-height:1.35}
+.flowscr p{margin:0}
+.note{font-size:12px;color:var(--muted)}
+.fld{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 10px;font-size:15px}
+.fld.big{font-size:17px;font-weight:700}
+.main{margin-top:auto;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 0;font-weight:700}
+.main.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.obrow{display:flex;gap:6px;align-items:center}
+.obrow .obn{flex:1;min-width:0}
+.obrow .obw{width:58px;text-align:right}
+.obrow .x{border:0;background:none;color:var(--muted);font-size:18px;width:26px}
+.small-btns{display:flex;gap:6px}
+.sbtn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 10px;font-size:13px}
+.sum{font-size:13px;font-weight:700}
+.sum.bad{color:var(--over)}
+.big{display:flex;align-items:baseline;gap:8px}
+.big b{font-size:34px;color:var(--accent)}
+.big span{font-size:13px;color:var(--muted)}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px}
+.chk input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+.sug{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.sug b{font-size:14px}
+.sug .acts{display:flex;gap:6px}
+.sug .acts button{flex:1;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 0;font-size:13px}
+.sug .acts button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sug .acts button.no[aria-pressed="true"]{background:var(--muted);border-color:var(--muted)}
+.wrow{display:flex;justify-content:space-between;font-size:13px}
+.wrow em{font-style:normal;font-weight:700;color:var(--accent)}
+
+/* pyramid */
+.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px}
+.tabs button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:2px 10px;font-size:12px}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.lv{display:flex;flex-direction:column;align-items:center;gap:2px}
+.lv small{font-size:10px;color:var(--muted)}
+.blk{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 10px;text-align:center;font-size:13px;width:100%}
+.blk.l1{width:62%;font-weight:700}
+.blk.l2{width:82%;text-align:left}
+.blk.l2 div{display:flex;justify-content:space-between;gap:6px;font-size:12px}
+.blk.l2 div span:last-child{color:var(--muted);flex:none}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%}
+.cat{border:1px solid var(--line);border-radius:10px;padding:7px 8px;font-size:12px;display:flex;flex-direction:column;gap:3px;background:var(--bg)}
+.cat.over{border-color:var(--over);background:var(--over-soft)}
+.cat.under{border-color:var(--under);background:var(--under-soft)}
+.cat b{font-size:13px}
+.br{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)}
+.br span{width:20px;flex:none}
+.br i{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:block}
+.br i em{display:block;height:100%}
+.br.pl em{background:var(--muted)}
+.br.ac em{background:var(--accent)}
+.df{font-size:11px;font-weight:700}
+.df.o{color:var(--over)} .df.u{color:var(--under)} .df.n{color:var(--muted);font-weight:500}
+.tk{font-size:10px;color:var(--muted);border-top:1px solid var(--line);padding-top:3px}
+.verdict{background:var(--bg);border-radius:10px;padding:8px 10px;font-size:13px}
+.tb{display:flex;gap:4px}
+.rvtabs{display:flex;gap:4px}
+.rvtabs button{flex:1;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 0;font-size:12px}
+.rvtabs button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.rvrow{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;background:var(--bg)}
+.rvt{display:flex;align-items:center;gap:6px;font-size:14px}
+.rvt span.tx{flex:1;min-width:0}
+.rvt .ck{font-size:11px;color:var(--ok);font-weight:700}
+.hm{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--muted)}
+.hm input{width:52px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 6px;text-align:right;font-size:15px}
+.rvadd{border:1px dashed var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.rvsum{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:13px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:5px;font-size:13px;text-align:left;background:var(--surface)}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--soft)}
+.opt b{font-size:14px}
+.focus{font-size:12px;color:var(--accent);margin-top:4px}
+.refl{font-size:12px;background:var(--bg);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="phone" id="phone"></div>
+  <div class="side">
+    <h1>핵심목표 피라미드 투두 1단계 프로토타입</h1>
+    <p class="lead">진입부터 직접 눌러 볼 수 있어요. 진입 화면에는 예시 값이 채워져 있어서 그대로 넘어가도 되고, 진입을 마치면 지난 3주 기록이 예시로 채워져요.</p>
+    <div class="ctl">
+      <button class="pill" data-a="demoOnboard">처음 진입 다시 보기</button>
+      <button class="pill" data-a="demoRv">저녁 회고 보기</button>
+      <button class="pill" data-a="demoPyr">피라미드 보기</button>
+      <button class="pill" data-a="demoClose">주간 마감 흐름 보기</button>
+    </div>
+    <div class="box"><h3>화면 흐름</h3>
+      <ol>
+        <li><b>진입</b>: 핵심목표가 없으면 건너뛸 수 없어요. 핵심목표 한 줄, 카테고리 최대 5개와 시간 비율(%)을 받아요. 비율은 똑같이 나눈 값으로 시작하고 합계가 100%여야 넘어가요.</li>
+        <li><b>메인</b>: 핵심목표, 상단바(주 범위, 회고, 피라미드), 주간 목표 한 줄, 월~일 달성 링, 일간 목록, 할 일 입력 순서예요. 할 일을 적을 때 카테고리를 직접 고르고, 라벨을 눌러 바꿀 수 있어요.</li>
+        <li><b>저녁 회고</b>: 할 일마다 시와 분을 적어요. 목록에 없던 일은 카테고리를 골라 바로 추가하고, 회고 한 줄은 선택이에요. 이틀 전까지 채울 수 있어요.</li>
+        <li><b>피라미드</b>: 핵심목표, 주간 목표, 카테고리, 할 일 순서로 보여 줘요. 처음엔 최근 4주 합계이고 주를 골라 볼 수 있어요.</li>
+        <li><b>주간 마감</b>: 돌아보기, 정리(비율 조정안과 시간 옮기기안 중 선택, 기타를 새 카테고리로 묶기), 이번 주 목표 순서예요.</li>
+      </ol></div>
+    <div class="box plan"><h3>계산 규칙</h3>
+      <div class="tw"><table><tr><th>지표</th><th>계산</th></tr>
+      <tr><td>카테고리 시간</td><td>그 카테고리 할 일들에 적은 시간의 합</td></tr>
+      <tr><td>실제 시간 비율</td><td>카테고리 시간 ÷ 그 기간에 적은 전체 시간</td></tr>
+      <tr><td>치우침</td><td>실제 비율 − 정한 비율이 +15% 이상이면 많음, −15% 이하면 부족</td></tr>
+      <tr><td>날짜별 달성 링</td><td>그날 체크한 할 일 수 ÷ 그날 적은 할 일 수</td></tr>
+      <tr><td>비율 조정안</td><td>정한 비율과 최근 4주 실제 비율의 중간값</td></tr>
+      <tr><td>시간 옮기기안</td><td>차이(%) × 회고한 날 기준 주 평균 시간, 30분 단위</td></tr></table></div>
+      <p>적은 시간은 체크 여부와 상관없이 들어가요. 기타는 치우침 판정에서 빠지고 실제 비율에만 들어가요. 주간 목표 완료율은 계산하지 않아요.</p></div>
+    <div class="box"><h3>1단계 범위</h3>
+      <ul>
+        <li><b>넣는 것</b>: 진입, 메인, 저녁 회고, 피라미드, 주간 마감</li>
+        <li><b>빼는 것</b>: 카테고리 자동 분류와 추천(2단계 이후), AI 계산과 카테고리 묶기(검토 중), 타이머, 시간대별 일정, 주간 목표 완료율</li>
+      </ul></div>
+    <div class="box"><h3>이 프로토타입에서 실제와 다른 점</h3>
+      <ul>
+        <li>저녁 9시 알림은 오지 않아요. 상단바 "회고" 버튼으로 들어가세요.</li>
+        <li>주간 마감은 오른쪽 버튼으로 언제든 열어 볼 수 있어요.</li>
+        <li>기록은 새로고침하면 처음으로 돌아가요.</li>
+      </ul></div>
+  </div>
+</div>
+
+<script>
+const WD=['일','월','화','수','목','금','토'];
+const TH=15;
+const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const parse=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
+const addD=(k,n)=>{const d=parse(k);d.setDate(d.getDate()+n);return key(d)};
+const wStart=k=>{const d=parse(k);d.setDate(d.getDate()-((d.getDay()+6)%7));return key(d)};
+const md=k=>{const x=parse(k);return (x.getMonth()+1)+'/'+x.getDate()};
+const dl=k=>{const x=parse(k);return (x.getMonth()+1)+'/'+x.getDate()+' ('+WD[x.getDay()]+')'};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hm=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return m<=0?'0분':(h?h+'시간':'')+(h&&r?' ':'')+(r?r+'분':'')};
+const TODAY=key(new Date()),THIS_W=wStart(TODAY);
+let N=0;const uid=()=>'t'+(++N);
+const KW={'리서치':['조사','인터뷰','레퍼런스','찾기','분석','수집','설문'],'제작':['와이어','만들','작성','디자인','초안','그리기','수정'],'피드백':['피드백','리뷰','멘토','공유','받기']};
+
+function equal(n){const b=Math.floor(100/n),r=100-b*n;return [...Array(n)].map((_,i)=>b+(i<r?1:0))}
+function freshOb(){const w=equal(3);return {step:1,vision:'나다운 일로 먹고사는 사람',cats:[{name:'리서치',w:w[0]},{name:'제작',w:w[1]},{name:'피드백',w:w[2]}]}}
+function fresh(){return {phase:'onboard',ob:freshOb(),vision:'',cats:[],tasks:{},goals:{},refl:{},focus:{},sel:TODAY,ws:THIS_W,editing:false,pr:'all',rv:TODAY,close:null,pick:null}}
+let S=fresh();
+
+const day=k=>S.tasks[k]||(S.tasks[k]=[]);
+const wk=ws=>[...Array(7)].flatMap((_,i)=>day(addD(ws,i)));
+const cidx=id=>S.cats.findIndex(c=>c.id===id);
+const cname=id=>id==='etc'?'기타':(S.cats.find(c=>c.id===id)||{name:'기타'}).name;
+const cstyle=id=>{const i=cidx(id);return i<0?'background:var(--sg);color:var(--cg)':`background:var(--s${i%5});color:var(--c${i%5})`};
+function classify(text){for(const c of S.cats){const kws=[c.name,...(KW[c.name]||[])];if(kws.some(k=>k&&text.includes(k)))return c.id}return 'etc'}
+const LAST4=end=>[-21,-14,-7,0].map(n=>addD(end||THIS_W,n));
+
+function seed(){
+  S.tasks={};S.goals={};S.refl={};S.focus={};
+  const n=S.cats.length;
+  const POOL=[['레퍼런스 3개 찾기','인터뷰 질문 정리','경쟁 서비스 조사','인터뷰 메모 정리','설문 결과 분석','참고 앱 화면 수집','인터뷰 일정 잡기'],
+              ['문제 정의 초안 작성','와이어프레임 1장','사용자 흐름 그리기','화면 디자인 수정'],
+              ['멘토 피드백 받기','동료 리뷰 요청'],['자료 정리'],['기록 정리']];
+  const ETC=['노트북 폴더 정리','발표 일정 잡기','회의실 예약','자료 백업'];
+  const DUR=[90,60,40,40,40];
+  const PLAN={'-3':[0,0,0,0,1,1,2,'e'],'-2':[0,0,0,1,1,2,3,'e'],'-1':[0,0,0,0,1,2,'e','e','e'],'0':[0,1,1,2,0]};
+  const GL={'-3':'인터뷰 5명 진행하기','-2':'문제 정의 확정하기','-1':'사용자 흐름 완성하기','0':'와이어프레임 3장 완성하기'};
+  const RF=['인터뷰가 생각보다 오래 걸렸다','조사만 하고 손은 못 댔다','초안을 드디어 썼다','피드백을 미뤘다','오후 집중이 좋았다'];
+  const pc=[0,0,0,0,0];let ec=0,rc=0;
+  const lim=Math.max(0,Math.round((parse(TODAY)-parse(THIS_W))/864e5));
+  for(const w of [-3,-2,-1,0]){
+    const ws=addD(THIS_W,w*7);S.goals[ws]=GL[w];
+    PLAN[w].forEach((ci,j)=>{
+      let cat,text,base;
+      if(ci==='e'||ci>=n){cat='etc';text=ETC[ec++%ETC.length];base=30}
+      else{cat=S.cats[ci].id;const p=POOL[Math.min(ci,4)];text=p[pc[ci]++%p.length];base=DUR[Math.min(ci,4)]}
+      let dk=addD(ws,j%7);if(w===0)dk=addD(ws,Math.min(j%7,lim));
+      let done=true;if(w<0&&j===PLAN[w].length-2)done=false;if(w===0&&dk===TODAY&&j%2===1)done=false;
+      let min=base+(j%3===0?30:0);if(!done)min=Math.round(min/3/5)*5;if(dk===TODAY)min=0;
+      day(dk).push({id:uid(),text,cat,done,min});
+    });
+    for(let i=0;i<7;i+=2){const k=addD(ws,i);if(k<TODAY)S.refl[k]=RF[rc++%RF.length]}
+  }
+}
+
+/* ---------- screens ---------- */
+function onboard(){
+  const o=S.ob;
+  if(o.step===1)return `<div class="flowscr"><div class="top"><span>시작하기 1 / 2</span></div>
+    <h2>어떤 사람이 되고 싶나요?</h2>
+    <p class="note">끝나지 않는 지향점이에요. 한 줄로 적어 주세요. 메인 화면 맨 위에 늘 보여요.</p>
+    <input class="fld big" data-ob="vision" maxlength="30" value="${esc(o.vision)}" placeholder="예: 나다운 일로 먹고사는 사람" aria-label="핵심목표">
+    <button class="main primary" data-a="ob1">다음</button></div>`;
+  const tot=o.cats.reduce((a,c)=>a+(+c.w||0),0);
+  return `<div class="flowscr"><div class="top"><button data-a="obback">‹ 이전</button><span>시작하기 2 / 2</span></div>
+    <h2>핵심목표를 위해 시간을 어디에 쓰고 싶나요?</h2>
+    <p class="note">영역은 최대 5개. %는 내 시간 중 그 영역에 쓰고 싶은 비율이에요. 똑같이 나눠 두었으니 원하는 대로 고치세요.</p>
+    ${o.cats.map((c,i)=>`<div class="obrow"><input class="fld obn" data-obn="${i}" maxlength="8" value="${esc(c.name)}" placeholder="영역 이름" aria-label="영역 ${i+1} 이름"><input class="fld obw" type="number" min="0" max="100" data-obw="${i}" value="${c.w}" aria-label="영역 ${i+1} 시간 비율">%<button class="x" data-a="obdel" data-i="${i}" aria-label="영역 삭제" ${o.cats.length<=1?'disabled':''}>×</button></div>`).join('')}
+    <div class="small-btns"><button class="sbtn" data-a="obadd" ${o.cats.length>=5?'disabled':''}>+ 영역 추가</button><button class="sbtn" data-a="obeq">똑같이 나누기</button></div>
+    <div class="sum ${tot===100?'':'bad'}" id="obsum">합계 ${tot}%${tot===100?'':' · 100%로 맞춰 주세요'}</div>
+    <p class="note">어디에도 안 맞는 일은 "기타"로 모여요. 기타는 5개에 들어가지 않아요.</p>
+    <button class="main primary" data-a="ob2">시작하기</button></div>`;
+}
+function weekStat(ws){const t=wk(ws),d=t.filter(x=>x.done).length;return {total:t.length,done:d,pct:t.length?Math.round(d/t.length*100):0}}
+function badge(ws){const s=weekStat(ws);if(ws<THIS_W)return `<span class="badge final">완료율 ${s.pct}% 기록</span>`;if(ws===THIS_W)return `<span class="badge live">진행 중 ${s.pct}%</span>`;return `<span class="badge wait">시작 전</span>`}
+function mainScr(){
+  const ks=[...Array(7)].map((_,i)=>addD(S.ws,i)),g=S.goals[S.ws]||'';
+  const label=S.ws<THIS_W?'지난주 목표':S.ws===THIS_W?'이번 주 목표':'다음 주 목표';
+  const goal=S.editing?`<input class="goal-edit" data-ge maxlength="40" value="${esc(g)}" aria-label="주간 목표">`
+    :`<button class="gtap" data-a="edit" aria-label="주간 목표 고치기"><div class="goal-t ${g?'':'ph'}">${g?esc(g):'이번 주 목표를 적어 보세요'}</div></button>`;
+  const x=parse(S.sel),ts=day(S.sel);
+  return `<div class="scr">
+    <div class="vis"><small>핵심목표</small><b>${esc(S.vision)}</b></div>
+    <div class="p-week">
+      <div class="wk-h"><span><button data-a="wk" data-n="-7" aria-label="지난주">‹</button>${md(ks[0])} – ${md(ks[6])}<button data-a="wk" data-n="7" aria-label="다음 주">›</button></span><span class="tb"><button class="pyr" data-a="openRv">회고</button><button class="pyr" data-a="openPyr" aria-label="피라미드">△</button></span></div>
+      <div class="gA"><small><span>${label}</span></small>${goal}${S.focus[S.ws]?`<div class="focus">시간 계획: ${esc(S.focus[S.ws])}</div>`:''}</div>
+      <div class="days">${ks.map(k=>{const t=day(k),d=t.filter(z=>z.done).length,p=t.length?d/t.length*100:0,y=parse(k);
+        return `<button class="dbtn ${k===TODAY?'today':''}" data-a="sel" data-k="${k}" aria-pressed="${k===S.sel}" aria-label="${y.getMonth()+1}월 ${y.getDate()}일 ${d}/${t.length}">${WD[y.getDay()]}<span class="ring" style="background:conic-gradient(var(--accent) ${p}%,var(--line) 0)"><span>${y.getDate()}</span></span></button>`}).join('')}</div>
+    </div>
+    <div class="p-day"><h4>${x.getMonth()+1}월 ${x.getDate()}일 (${WD[x.getDay()]})${S.sel===TODAY?' · 오늘':''}</h4>
+      ${ts.length?ts.map(t=>`<div class="task ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} data-a="tg" data-k="${S.sel}" data-id="${t.id}" aria-label="완료"><span class="t">${esc(t.text)}</span><button class="chip ${t.auto?'auto':''}" style="${cstyle(t.cat)}" data-a="cyc" data-k="${S.sel}" data-id="${t.id}" aria-label="카테고리 바꾸기: 지금 ${cname(t.cat)}">${esc(cname(t.cat))}</button></div>`).join(''):'<div class="empty">할 일을 적어 보세요</div>'}
+    </div></div>
+    <div class="p-add">${picksHTML()}<div class="addrow"><input type="text" data-in placeholder="할 일 추가" aria-label="할 일 입력"><button data-a="add">추가</button></div>
+      <div class="hint">카테고리를 고르고 추가하세요. 라벨을 누르면 바꿀 수 있어요.</div></div>`;
+}
+function curPick(){const ids=[...S.cats.map(c=>c.id),'etc'];if(!ids.includes(S.pick))S.pick=ids[0];return S.pick}
+function picksHTML(){const p=curPick();return `<div class="picks" role="group" aria-label="카테고리 고르기">${[...S.cats.map(c=>c.id),'etc'].map(id=>`<button class="pick" style="${cstyle(id)}" data-a="pick" data-v="${id}" aria-pressed="${id===p}">${esc(cname(id))}</button>`).join('')}</div>`}
+function rvSumHTML(){
+  const ts=day(S.rv),tot=ts.reduce((a,t)=>a+(t.min||0),0);
+  const by=[...S.cats.map(c=>c.id),'etc'].map(id=>({id,m:ts.filter(t=>t.cat===id).reduce((a,t)=>a+(t.min||0),0)})).filter(r=>r.m>0);
+  return `<b>합계 ${hm(tot)}</b>${by.length?' · '+by.map(r=>`${esc(cname(r.id))} ${hm(r.m)}`).join(' / '):''}`;
+}
+function reviewScr(){
+  const k=S.rv,dates=[addD(TODAY,-2),addD(TODAY,-1),TODAY],ts=day(k);
+  return `<div class="flowscr" style="gap:8px"><div class="top"><button data-a="closeRv">‹ 돌아가기</button><span>저녁 회고</span></div>
+    <div class="rvtabs" role="group" aria-label="날짜">${dates.map(d=>`<button data-a="rvd" data-k="${d}" aria-pressed="${d===k}">${d===TODAY?'오늘':d===addD(TODAY,-1)?'어제':'그제'} ${md(d)}</button>`).join('')}</div>
+    <p class="note">할 일마다 실제로 쓴 시간을 적어요. 체크 안 한 일도 쓴 시간이 있으면 적어요.</p>
+    ${ts.map(t=>{const h=Math.floor((t.min||0)/60),m=(t.min||0)%60;return `<div class="rvrow"><div class="rvt"><span class="tx">${esc(t.text)}</span>${t.done?'<span class="ck">✓ 완료</span>':''}<button class="chip" style="${cstyle(t.cat)}" data-a="cyc" data-k="${k}" data-id="${t.id}" aria-label="카테고리 바꾸기">${esc(cname(t.cat))}</button></div>
+      <div class="hm"><input type="number" min="0" max="23" inputmode="numeric" data-h="${t.id}" value="${h}" aria-label="${esc(t.text)} 시간">시간<input type="number" min="0" max="59" step="5" inputmode="numeric" data-m="${t.id}" value="${m}" aria-label="${esc(t.text)} 분">분</div></div>`}).join('')||'<p class="note">이날 적어 둔 할 일이 없어요.</p>'}
+    <div class="rvadd"><span class="note" style="font-weight:700;color:var(--ink)">+ 목록에 없던 일</span>
+      ${picksHTML()}<input class="fld" data-nt maxlength="30" placeholder="예: 회의실 예약" aria-label="목록에 없던 일">
+      <div class="hm"><input type="number" min="0" max="23" data-nh value="0" aria-label="시간">시간<input type="number" min="0" max="59" step="5" data-nm value="30" aria-label="분">분<button class="sbtn" data-a="rvAdd" style="margin-left:auto">추가</button></div></div>
+    <label class="note">오늘 회고 한 줄 (선택)<input class="fld" data-rf maxlength="40" value="${esc(S.refl[k]||'')}" placeholder="예: 오후 집중이 좋았다"></label>
+    <div class="rvsum" id="rvsum">${rvSumHTML()}</div>
+    <button class="main primary" data-a="closeRv">저장</button></div>`;
+}
+function timeStats(weeks){
+  const all=weeks.flatMap(ws=>wk(ws)).filter(t=>(t.min||0)>0);const total=all.reduce((a,t)=>a+t.min,0);
+  const rows=[...S.cats.map(c=>({id:c.id,name:c.name,w:c.w})),{id:'etc',name:'기타',w:null}].map(r=>{
+    const list=all.filter(t=>t.cat===r.id).sort((a,b)=>b.min-a.min);const m=list.reduce((a,t)=>a+t.min,0);
+    const act=total?Math.round(m/total*100):0;return {...r,list,m,act,df:r.w==null?null:act-r.w}});
+  return {total,rows};
+}
+function verdict(rows){
+  const over=rows.filter(r=>r.df!=null&&r.df>=TH).map(r=>r.name),under=rows.filter(r=>r.df!=null&&r.df<=-TH).map(r=>r.name);
+  if(!over.length&&!under.length)return '치우침 없이 정한 비율 가까이 쓰고 있어요.';
+  return `${over.length?`<b style="color:var(--over)">${over.join('·')}</b>에 많이 썼고 `:''}${under.length?`<b style="color:var(--under)">${under.join('·')}</b>에 덜 썼어요.`:''}`;
+}
+function pyrScr(){
+  const W4=LAST4(),weeks=S.pr==='all'?W4:[S.pr],st=timeStats(weeks);
+  const tabs=[['all','최근 4주'],...W4.map(w=>[w,md(w)+(w===THIS_W?' 이번 주':'')])];
+  const goals=weeks.map(w=>`<div><span>${S.goals[w]?esc(S.goals[w]):'목표 없음'}</span><span>${md(w)} 주</span></div>`).join('');
+  return `<div class="flowscr" style="gap:8px"><div class="top"><button data-a="closePyr">‹ 돌아가기</button><span>피라미드 · 기준 ${TH}%</span></div>
+    <div class="tabs" role="group" aria-label="기간">${tabs.map(([v,l])=>`<button data-a="pr" data-v="${v}" aria-pressed="${S.pr===v}">${l}</button>`).join('')}</div>
+    <div class="lv"><small>핵심목표</small><div class="blk l1">${esc(S.vision)}</div></div>
+    <div class="lv"><small>주간 목표</small><div class="blk l2">${goals}</div></div>
+    <div class="lv"><small>카테고리 · 정한 비율 vs 실제 시간 (총 ${hm(st.total)})</small>
+      <div class="cats">${st.rows.map(r=>{
+        const cls=r.df==null?'':r.df>=TH?'over':r.df<=-TH?'under':'';
+        const dt=r.df==null?'<span class="df n">비율 없음</span>':r.df>=TH?`<span class="df o">${r.df}% 많음</span>`:r.df<=-TH?`<span class="df u">${-r.df}% 부족</span>`:`<span class="df n">괜찮음 (${r.df>0?'+':''}${r.df}%)</span>`;
+        return `<div class="cat ${cls}"><b>${esc(r.name)} <span style="font-weight:400;color:var(--muted)">${hm(r.m)}</span></b>
+          ${r.w!=null?`<div class="br pl"><span>정한</span><i><em style="width:${r.w}%"></em></i>${r.w}%</div>`:''}
+          <div class="br ac"><span>실제</span><i><em style="width:${r.act}%"></em></i>${r.act}%</div>${dt}
+          <div class="tk">${r.list.slice(0,2).map(t=>esc(t.text)+' '+hm(t.min)).join('<br>')||'기록 없음'}${r.list.length>2?`<br>외 ${r.list.length-2}개`:''}</div></div>`}).join('')}</div></div>
+    <div class="verdict">${st.total?verdict(st.rows):'아직 기록한 시간이 없어요. 저녁 회고에서 적어 보세요.'}</div>
+  </div>`;
+}
+function proposal(){
+  const lw=addD(THIS_W,-7),weeks=LAST4(lw),st=timeStats(weeks);
+  const etcRow=st.rows.find(r=>r.id==='etc');
+  const etc=etcRow.m>=120&&S.cats.length<5?{m:etcRow.m,list:etcRow.list.map(t=>({id:t.id,text:t.text,min:t.min}))}:null;
+  const cats=st.rows.filter(r=>r.id!=='etc');
+  const biased=cats.some(r=>Math.abs(r.df)>=TH);
+  let to=cats.map(r=>Math.round((r.w+r.act)/2));const sum=to.reduce((a,b)=>a+b,0)||1;
+  to=to.map(v=>Math.round(v*100/sum));to[0]+=100-to.reduce((a,b)=>a+b,0);
+  const days=new Set(weeks.flatMap(ws=>[...Array(7)].map((_,i)=>addD(ws,i))).filter(k=>day(k).some(t=>(t.min||0)>0)));const weekly=days.size?st.total/days.size*7:0;
+  const time=cats.filter(r=>Math.abs(r.df)>=TH).map(r=>{const d=Math.round(Math.abs(r.df)/100*weekly/30)*30;return {name:r.name,txt:r.df<0?`${r.name} 주 ${hm(d)} 더`:`${r.name} 주 ${hm(d)} 줄이기`}});
+  return {etc,biased,rows:cats,ratio:cats.map((r,i)=>({id:r.id,name:r.name,from:r.w,to:to[i]})),time,weeks,verdict:verdict(st.rows)};
+}
+function closeScr(){
+  const C=S.close,lw=addD(THIS_W,-7);
+  if(C.step===1){
+    const sw=weekStat(lw),rf=[...Array(7)].map((_,i)=>addD(lw,i)).filter(k=>S.refl[k]);
+    return `<div class="flowscr"><div class="top"><span>주간 마감 1 / 3 · ${md(lw)} – ${md(addD(lw,6))}</span><button data-a="cSkip">건너뛰기</button></div>
+      <h2>${S.goals[lw]?esc(S.goals[lw]):'지난주 목표 없음'}</h2>
+      <div class="note" style="font-weight:700;color:var(--ink)">이번 주 회고 한 줄</div>
+      <div class="refl">${rf.length?rf.map(k=>`<span><b>${dl(k)}</b> ${esc(S.refl[k])}</span>`).join(''):'<span>적은 회고가 없어요.</span>'}</div>
+      <label class="note">잘된 점 한 줄 (선택)<input class="fld" data-rv="good" maxlength="40" value="${esc(C.good)}" placeholder="초안을 드디어 썼다"></label>
+      <label class="note">아쉬운 점 한 줄 (선택)<input class="fld" data-rv="bad" maxlength="40" value="${esc(C.bad)}" placeholder="조사에만 시간을 썼다"></label>
+      <button class="main" data-a="cNext">다음</button></div>`;
+  }
+  if(C.step===2){
+    const P=C.prop;
+    return `<div class="flowscr"><div class="top"><button data-a="cBack">‹ 이전</button><span>주간 마감 2 / 3</span></div>
+      <h2>시간을 어떻게 쓸지 정리해요</h2>
+      <p class="note">최근 4주 기록한 시간 기준이에요. ${P.verdict}</p>
+      ${P.biased?`<button class="opt" data-a="choose" data-v="ratio" aria-pressed="${C.choice==='ratio'}"><b>A. 비율을 실제에 맞춰 조정</b>${P.ratio.map(r=>`<span class="wrow" style="width:100%"><span>${esc(r.name)}</span><span>${r.from}% → <em>${r.to}%</em></span></span>`).join('')}<span class="note">정한 비율과 실제의 중간값이에요.</span></button>
+      <button class="opt" data-a="choose" data-v="time" aria-pressed="${C.choice==='time'}"><b>B. 비율은 두고 시간을 옮기기</b>${P.time.map(t=>`<span>${esc(t.txt)}</span>`).join('')}<span class="note">이번 주 목표 아래에 시간 계획으로 보여요.</span></button>
+      <button class="opt" data-a="choose" data-v="keep" aria-pressed="${C.choice==='keep'}"><b>그대로 두기</b></button>`
+      :'<p class="note">치우친 카테고리가 없어서 비율은 그대로 둘게요.</p>'}
+      ${P.etc?`<div class="sug"><b>기타에서 새 카테고리 만들기</b>
+        <span>기타에 쓴 시간 ${hm(P.etc.m)}. 새 카테고리로 옮길 일을 직접 골라 주세요.</span>
+        ${P.etc.list.map(t=>`<label class="chk"><input type="checkbox" data-mv="${t.id}" ${C.mv&&C.mv[t.id]?'checked':''}>${esc(t.text)} · ${hm(t.min)}</label>`).join('')}
+        <input class="fld" data-nc maxlength="8" value="${esc(C.newName)}" placeholder="새 카테고리 이름" aria-label="새 카테고리 이름">
+        <div class="acts"><button data-a="acc" data-v="1" aria-pressed="${C.acc===true}">승인</button><button class="no" data-a="acc" data-v="0" aria-pressed="${C.acc===false}">그대로 두기</button></div></div>`:''}
+      <button class="main" data-a="cNext2">다음</button></div>`;
+  }
+  const undone=wk(lw).filter(t=>!t.done),P=C.prop;
+  return `<div class="flowscr"><div class="top"><button data-a="cBack2">‹ 이전</button><span>주간 마감 3 / 3 · ${md(THIS_W)} 시작</span></div>
+    ${C.bad?`<p class="note" style="background:var(--bg);border-radius:8px;padding:8px 10px">지난주 아쉬운 점: ${esc(C.bad)}</p>`:''}
+    <h2>이번 주 목표 한 줄</h2>
+    <input class="fld big" data-cg maxlength="40" value="${esc(C.goal)}" placeholder="와이어프레임 3장 완성하기" aria-label="이번 주 목표">
+    ${C.choice==='time'&&P.time.length?`<div class="rvsum">시간 계획: ${P.time.map(t=>esc(t.txt)).join(', ')}</div>`:''}
+    <div class="note" style="font-weight:700;color:var(--ink)">지난주 못 끝낸 일</div>
+    ${undone.length?undone.map(t=>`<label class="chk"><input type="checkbox" data-cu="${t.id}" checked>${esc(t.text)}</label>`).join(''):'<p class="note">모두 끝냈어요.</p>'}
+    <p class="note">체크한 일만 이번 주 월요일 목록에 추가해요. 지난주 기록은 그대로예요.</p>
+    <button class="main primary" data-a="cStart">이번 주 시작</button></div>`;
+}
+function applyClose(){
+  const C=S.close,P=C.prop;
+  if(C.choice==='ratio')P.ratio.forEach(r=>{const c=S.cats.find(x=>x.id===r.id);if(c)c.w=r.to});
+  if(C.choice==='time'&&P.time.length)S.focus[THIS_W]=P.time.map(t=>t.txt).join(', ');
+  if(C.acc===true&&P.etc){
+    const nid='k'+uid();S.cats.push({id:nid,name:(C.newName||'새 영역').trim(),w:10});
+    const mx=S.cats.slice(0,-1).reduce((a,b)=>b.w>a.w?b:a);mx.w-=10;
+    P.weeks.flatMap(ws=>wk(ws)).forEach(t=>{if(t.cat==='etc'&&C.mv&&C.mv[t.id])t.cat=nid});
+  }
+}
+
+function render(){
+  const ph=document.getElementById('phone');
+  ph.innerHTML=S.phase==='onboard'?onboard():S.phase==='pyr'?pyrScr():S.phase==='close'?closeScr():S.phase==='rv'?reviewScr():mainScr();
+  const ge=ph.querySelector('[data-ge]');if(ge){ge.focus();ge.setSelectionRange(ge.value.length,ge.value.length)}
+}
+function finishOb(){
+  S.vision=S.ob.vision.trim()||'나다운 일로 먹고사는 사람';
+  S.cats=S.ob.cats.map((c,i)=>({id:'k'+i,name:c.name.trim(),w:+c.w}));
+  seed();S.phase='main';S.ws=THIS_W;S.sel=TODAY;
+}
+function ensureMain(){if(!S.cats.length){S.ob=freshOb();finishOb()}}
+function addTask(){
+  const i=document.querySelector('[data-in]');const v=i&&i.value.trim();if(!v)return;
+  day(S.sel).push({id:uid(),text:v,cat:curPick(),done:false,min:0});render();
+  const n=document.querySelector('[data-in]');if(n)n.focus();
+}
+function findTask(id){for(const k in S.tasks){const t=S.tasks[k].find(x=>x.id===id);if(t)return t}return null}
+
+document.addEventListener('input',e=>{
+  const t=e.target,o=S.ob;
+  if(t.dataset.ob==='vision')o.vision=t.value;
+  if(t.dataset.obn!=null)o.cats[+t.dataset.obn].name=t.value;
+  if(t.dataset.obw!=null){o.cats[+t.dataset.obw].w=Math.max(0,Math.min(100,+t.value||0));
+    const tot=o.cats.reduce((a,c)=>a+(+c.w||0),0),el=document.getElementById('obsum');
+    if(el){el.textContent='합계 '+tot+'%'+(tot===100?'':' · 100%로 맞춰 주세요');el.className='sum'+(tot===100?'':' bad')}}
+  if(t.dataset.h!=null||t.dataset.m!=null){const id=t.dataset.h||t.dataset.m,tk=findTask(id);
+    const h=+document.querySelector(`[data-h="${id}"]`).value||0,m=+document.querySelector(`[data-m="${id}"]`).value||0;
+    tk.min=Math.max(0,Math.min(23,h))*60+Math.max(0,Math.min(59,m));const s=document.getElementById('rvsum');if(s)s.innerHTML=rvSumHTML()}
+  if(t.dataset.rf!=null)S.refl[S.rv]=t.value;
+  if(t.dataset.mv!=null&&S.close){S.close.mv=S.close.mv||{};S.close.mv[t.dataset.mv]=t.checked}
+  if(t.dataset.rv&&S.close)S.close[t.dataset.rv]=t.value;
+  if(t.dataset.nc!=null&&S.close)S.close.newName=t.value;
+  if(t.dataset.cg!=null&&S.close)S.close.goal=t.value;
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,o=S.ob;
+  switch(a){
+    case 'demoOnboard':S=fresh();break;
+    case 'demoRv':ensureMain();S.phase='rv';S.rv=TODAY;break;
+    case 'demoPyr':ensureMain();S.phase='pyr';S.pr='all';break;
+    case 'demoClose':ensureMain();S.close={step:1,good:'',bad:'',choice:null,acc:null,newName:'',goal:S.goals[THIS_W]||''};S.phase='close';break;
+    case 'ob1':if(!o.vision.trim())return;o.step=2;break;
+    case 'obback':o.step=1;break;
+    case 'obadd':if(o.cats.length<5){o.cats.push({name:'',w:0});const w=equal(o.cats.length);o.cats.forEach((c,i)=>c.w=w[i])}break;
+    case 'obdel':if(o.cats.length>1){o.cats.splice(+b.dataset.i,1);const w=equal(o.cats.length);o.cats.forEach((c,i)=>c.w=w[i])}break;
+    case 'obeq':{const w=equal(o.cats.length);o.cats.forEach((c,i)=>c.w=w[i])}break;
+    case 'ob2':{const tot=o.cats.reduce((x,c)=>x+(+c.w||0),0);if(tot!==100||o.cats.some(c=>!c.name.trim()))return;finishOb()}break;
+    case 'wk':S.ws=addD(S.ws,+b.dataset.n);S.sel=S.ws===THIS_W?TODAY:S.ws;S.editing=false;break;
+    case 'sel':S.sel=b.dataset.k;break;
+    case 'edit':S.editing=true;break;
+    case 'tg':day(b.dataset.k).find(t=>t.id===b.dataset.id).done=b.checked;break;
+    case 'cyc':{const t=day(b.dataset.k).find(t=>t.id===b.dataset.id);const ids=[...S.cats.map(c=>c.id),'etc'];t.cat=ids[(ids.indexOf(t.cat)+1)%ids.length];t.auto=false}break;
+    case 'pick':S.pick=b.dataset.v;break;
+    case 'add':addTask();return;
+    case 'openRv':S.phase='rv';S.rv=TODAY;break;
+    case 'rvd':S.rv=b.dataset.k;break;
+    case 'rvAdd':{const nt=document.querySelector('[data-nt]'),v=nt&&nt.value.trim();if(!v)return;
+      const h=+document.querySelector('[data-nh]').value||0,m=+document.querySelector('[data-nm]').value||0;
+      day(S.rv).push({id:uid(),text:v,cat:curPick(),done:true,min:Math.min(23,h)*60+Math.min(59,m)})}break;
+    case 'closeRv':S.phase='main';S.sel=S.rv;break;
+    case 'openPyr':S.phase='pyr';S.pr='all';break;
+    case 'closePyr':S.phase='main';break;
+    case 'pr':S.pr=b.dataset.v;break;
+    case 'cSkip':S.phase='main';S.close=null;break;
+    case 'cNext':S.close.prop=proposal();S.close.step=2;break;
+    case 'cBack':S.close.step=1;break;
+    case 'choose':S.close.choice=b.dataset.v;break;
+    case 'acc':S.close.acc=b.dataset.v==='1';break;
+    case 'cNext2':S.close.step=3;break;
+    case 'cBack2':S.close.step=2;break;
+    case 'cStart':{applyClose();S.goals[THIS_W]=(S.close.goal||'').trim();
+      const ids=[...document.querySelectorAll('[data-cu]:checked')].map(x=>x.dataset.cu);
+      const picked=wk(addD(THIS_W,-7)).filter(t=>ids.includes(t.id));
+      day(THIS_W).unshift(...picked.map(t=>({id:uid(),text:t.text,cat:t.cat,done:false,min:0})));
+      S.close=null;S.phase='main';S.ws=THIS_W;S.sel=THIS_W}break;
+  }
+  render();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;const t=e.target;
+  if(t.dataset.in!=null)addTask();
+  if(t.dataset.ge!=null){S.goals[S.ws]=t.value.trim();S.editing=false;render()}
+  if(t.dataset.ob==='vision')document.querySelector('[data-a="ob1"]').click();
+  if(t.dataset.nt!=null)document.querySelector('[data-a="rvAdd"]').click();
+});
+document.addEventListener('focusout',e=>{const t=e.target;if(t.dataset&&t.dataset.ge!=null&&S.editing){S.goals[S.ws]=t.value.trim();S.editing=false;render()}});
+render();
+</script>
+</body>
+</html>
