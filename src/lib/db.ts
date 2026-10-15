@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import type { WeekRatio } from './pyramid'
 
 export type Todo = { id: string; date: string; text: string; done: boolean; category_id: string | null; minutes: number }
 
@@ -47,11 +48,11 @@ export async function saveWeek(weekStart: string, patch: Partial<Week>): Promise
 export type Category = { id: string; name: string; ratio: number }
 export type Setup = { coreGoal: string; cats: Category[] }
 
-/** 핵심목표와 카테고리. 핵심목표가 없으면 null → 진입 화면 */
+/** 핵심목표와 (지우지 않은) 카테고리. 핵심목표가 없으면 null → 진입 화면 */
 export async function loadSetup(): Promise<Setup | null> {
   const p = must(await supabase.from('profiles').select('core_goal').maybeSingle<{ core_goal: string }>())
   if (!p) return null
-  const cats = must(await supabase.from('categories').select('id, name, ratio').order('position')) as Category[]
+  const cats = must(await supabase.from('categories').select('id, name, ratio').is('deleted_at', null).order('position')) as Category[]
   return { coreGoal: p.core_goal, cats }
 }
 
@@ -99,4 +100,9 @@ export async function setRatios(rows: { id: string; ratio: number }[]): Promise<
 
 export async function moveTodos(ids: string[], category_id: string): Promise<void> {
   must(await supabase.from('todos').update({ category_id }).in('id', ids))
+}
+
+/** 지금까지 정한 주간 비율 전부(작다: 주 × 카테고리) */
+export async function loadWeekRatios(): Promise<WeekRatio[]> {
+  return must(await supabase.from('week_ratios').select('week_start, category_id, ratio')) as WeekRatio[]
 }
