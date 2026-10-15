@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { addTodo, deleteTodo, loadGoal, loadTodos, saveGoal, updateTodo, type Todo } from './lib/db'
+import { addTodo, deleteTodo, loadTodos, loadWeek, saveWeek, updateTodo, type Todo } from './lib/db'
 import { addDays, isReadOnly, parseKey, rate, today, weekDays, weekKind, weekRange, weekStart } from './lib/week'
 
 const WD = ['일', '월', '화', '수', '목', '금', '토']
@@ -22,8 +22,8 @@ export function Home({ onError, onSignOut }: Props) {
 
   const reload = useCallback(
     () =>
-      Promise.all([loadTodos(ws, addDays(ws, 6)), loadGoal(ws)])
-        .then(([todos, goal]) => setLoaded({ ws, todos, goal }))
+      Promise.all([loadTodos(ws, addDays(ws, 6)), loadWeek(ws)])
+        .then(([todos, w]) => setLoaded({ ws, todos, goal: w?.goal ?? '' }))
         .catch(onError),
     [ws, onError],
   )
@@ -95,7 +95,7 @@ export function Home({ onError, onSignOut }: Props) {
               key={ws}
               goal={cur.goal}
               readOnly={kind === 'past'}
-              onSave={(goal) => act((l) => ({ ...l, goal }), saveGoal(ws, goal))}
+              onSave={(goal) => act((l) => ({ ...l, goal }), saveWeek(ws, { goal }))}
             />
           )}
         </div>
@@ -112,10 +112,7 @@ export function Home({ onError, onSignOut }: Props) {
                 aria-label={`${d.getMonth() + 1}월 ${d.getDate()}일 ${r.done}/${r.total}`}
                 onClick={() => setSel(k)}
               >
-                {WD[d.getDay()]}
-                <span className="ring" style={{ background: `conic-gradient(var(--accent) ${r.pct}%, var(--line) 0)` }}>
-                  <span>{d.getDate()}</span>
-                </span>
+                <DayRing k={k} pct={r.pct} />
               </button>
             )
           })}
@@ -157,6 +154,19 @@ export function Home({ onError, onSignOut }: Props) {
         </form>
       )}
     </main>
+  )
+}
+
+/** 요일 + 날짜 달성 링. 마감 흐름에서도 쓴다 */
+export function DayRing({ k, pct }: { k: string; pct: number }) {
+  const d = parseKey(k)
+  return (
+    <>
+      {WD[d.getDay()]}
+      <span className="ring" style={{ background: `conic-gradient(var(--accent) ${pct}%, var(--line) 0)` }}>
+        <span>{d.getDate()}</span>
+      </span>
+    </>
   )
 }
 

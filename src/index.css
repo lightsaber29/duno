@@ -342,3 +342,112 @@ button.t {
 .p-add button {
   padding: 0 14px;
 }
+
+/* 주간 마감 흐름 */
+.close {
+  min-height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface);
+}
+.c-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+.c-top button {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 4px 0;
+}
+.c-goal {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.c-big {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.c-big b {
+  font-size: 34px;
+  color: var(--accent);
+}
+.c-big span {
+  font-size: 13px;
+  color: var(--muted);
+}
+.c-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.c-f {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.c-f em {
+  font-style: normal;
+  color: var(--muted);
+  font-weight: 400;
+}
+.c-f input {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 16px; /* 16px 미만이면 iOS가 확대함 */
+  font-weight: 400;
+}
+.c-f input.c-goalin {
+  font-size: 17px;
+  font-weight: 700;
+}
+.c-prev {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.c-sub {
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.c-chk {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.c-chk input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.c-main {
+  margin-top: auto;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 12px 0;
+  font-weight: 700;
+}
+.c-main.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}

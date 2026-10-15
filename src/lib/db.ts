@@ -26,13 +26,19 @@ export async function deleteTodo(id: string): Promise<void> {
   must(await supabase.from('todos').delete().eq('id', id))
 }
 
-/** 그 주의 목표. 행이 없으면 빈 문자열 */
-export async function loadGoal(weekStart: string): Promise<string> {
-  const row = must(await supabase.from('weeks').select('goal').eq('week_start', weekStart).maybeSingle<{ goal: string }>())
-  return row?.goal ?? ''
+export type Week = { goal: string; good: string; bad: string; closed_at: string | null }
+
+/** 그 주 행. 아직 안 만들어졌으면 null */
+export async function loadWeek(weekStart: string): Promise<Week | null> {
+  return must(await supabase.from('weeks').select('goal, good, bad, closed_at').eq('week_start', weekStart).maybeSingle<Week>())
 }
 
-/** 주 행이 없으면 만들고, 있으면 goal만 바꾼다 */
-export async function saveGoal(weekStart: string, goal: string): Promise<void> {
-  must(await supabase.from('weeks').upsert({ week_start: weekStart, goal }, { onConflict: 'user_id,week_start' }))
+/** 마감 흐름을 끝냈거나 건너뛴 표시. 회고 한 줄도 같이 저장 */
+export async function closeWeek(weekStart: string, review?: { good: string; bad: string }): Promise<void> {
+  await saveWeek(weekStart, { ...review, closed_at: new Date().toISOString() })
+}
+
+/** 주 행이 없으면 만들고, 있으면 넘긴 열만 바꾼다 */
+export async function saveWeek(weekStart: string, patch: Partial<Week>): Promise<void> {
+  must(await supabase.from('weeks').upsert({ week_start: weekStart, ...patch }, { onConflict: 'user_id,week_start' }))
 }
