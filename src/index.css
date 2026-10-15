@@ -392,7 +392,7 @@ button.t {
   color: var(--muted);
 }
 
-/* 핵심목표 · 카테고리 라벨 · 시간 계획 */
+/* 핵심목표 · 카테고리 라벨 */
 .vis {
   background: var(--surface);
   padding: 12px 12px 6px;
@@ -418,11 +418,6 @@ button.t {
 }
 .task.done .chip {
   opacity: 0.55;
-}
-.focus {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: var(--accent);
 }
 
 /* 주간 마감·진입 흐름 */
@@ -872,7 +867,7 @@ button.t {
   padding: 8px;
 }
 
-/* 주간 마감: 회고 모음 · 정리 안 · 새 카테고리 */
+/* 주간 마감: 회고 모음 · 지난주 정리 */
 .refl {
   font-size: 12px;
   background: var(--bg);
@@ -882,24 +877,6 @@ button.t {
   flex-direction: column;
   gap: 3px;
 }
-.opt {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 13px;
-  text-align: left;
-  background: var(--surface);
-}
-.opt[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: var(--soft);
-}
-.opt b {
-  font-size: 14px;
-}
 .wrow {
   display: flex;
   justify-content: space-between;
@@ -908,40 +885,7 @@ button.t {
 .wrow em {
   font-style: normal;
   font-weight: 700;
-  color: var(--accent);
-}
-.sug {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
-}
-.sug b {
-  font-size: 14px;
-}
-.acts {
-  display: flex;
-  gap: 6px;
-}
-.acts button {
-  flex: 1;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  border-radius: 8px;
-  padding: 6px 0;
-  font-size: 13px;
-}
-.acts button[aria-pressed='true'] {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-.acts button.no[aria-pressed='true'] {
-  background: var(--muted);
-  border-color: var(--muted);
+  color: var(--muted); /* 계획대로. 더·덜은 아래 색 */
 }
 
 /* 할 일 입력 권유 */
@@ -979,4 +923,48 @@ button.t {
   color: var(--muted);
   font-size: 12px;
   padding: 3px 4px;
+}
+
+.wk-sum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.done-badge {
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 10px;
+  flex: none;
+}
+.ratio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+}
+.wrow em.v-o {
+  color: var(--over);
+}
+.wrow em.v-u {
+  color: var(--under);
+}
+.ob-row .ob-name {
+  flex: 1;
+  min-width: 0;
+}
+.link {
+  border: 0;
+  background: none;
+  color: var(--accent);
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
 }

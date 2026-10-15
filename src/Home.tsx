@@ -10,11 +10,12 @@ const WD = ['일', '월', '화', '수', '목', '금', '토']
 const GOAL_LABEL = { past: '지난주 목표', current: '이번 주 목표', future: '다음 주 목표' }
 
 type Props = { setup: Setup; startMonday?: boolean; onError: (e: unknown) => void; onSignOut: () => void }
-type Loaded = { ws: string; todos: Todo[]; goal: string; plan: string }
+type Loaded = { ws: string; todos: Todo[]; goal: string }
 
 /** 메인: 핵심목표 → 상단바 → 주간 목표·시간 계획 → 주간 줄 → 일간 목록 → 카테고리 고르기·할 일 입력. 문구는 프로토타입(킥보드 phase2.html) 그대로 */
 export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   const { cats } = setup
+  const named = [...cats, ...setup.gone]
   const t = today()
   const thisWeek = weekStart(t)
   const [ws, setWs] = useState(thisWeek)
@@ -32,7 +33,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   const reload = useCallback(
     () =>
       Promise.all([loadTodos(ws, addDays(ws, 6)), loadWeek(ws)])
-        .then(([todos, w]) => setLoaded({ ws, todos, goal: w?.goal ?? '', plan: w?.time_plan ?? '' }))
+        .then(([todos, w]) => setLoaded({ ws, todos, goal: w?.goal ?? '' }))
         .catch(onError),
     [ws, onError],
   )
@@ -110,6 +111,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
     return (
       <Review
         cats={cats}
+        named={named}
         onError={onError}
         onClose={(date) => {
           setReview(false)
@@ -153,7 +155,6 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
         <div className="goal">
           <small>{GOAL_LABEL[kind]}</small>
           {cur && <Goal key={ws} goal={cur.goal} label={GOAL_LABEL[kind]} onSave={(goal) => act((l) => ({ ...l, goal }), saveWeek(ws, { goal }))} />}
-          {cur?.plan && <p className="focus">시간 계획: {cur.plan}</p>}
         </div>
         <div className="days">
           {days.map((k) => {
@@ -186,6 +187,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
                 key={x.id}
                 todo={x}
                 cats={cats}
+                named={named}
                 onToggle={(done) => act(mapTodos((ts) => ts.map((y) => (y.id === x.id ? { ...y, done } : y))), updateTodo(x.id, { done }))}
                 onSave={(text) => act(mapTodos((ts) => ts.map((y) => (y.id === x.id ? { ...y, text } : y))), updateTodo(x.id, { text }))}
                 onDelete={() => act(mapTodos((ts) => ts.filter((y) => y.id !== x.id)), deleteTodo(x.id))}
@@ -288,6 +290,7 @@ function Goal({ goal, label, onSave }: GoalProps) {
 type RowProps = {
   todo: Todo
   cats: Category[]
+  named: Category[] // 이름 찾기용: 지운 카테고리 포함(라벨은 원래 이름에 회색, TD-3)
   onToggle: (done: boolean) => void
   onSave: (text: string) => void
   onDelete: () => void
@@ -295,7 +298,7 @@ type RowProps = {
 }
 
 /** 체크 · 글자(누르면 수정 칸 + 삭제) · 카테고리 라벨(누르면 다음 카테고리로) */
-function TodoRow({ todo, cats, onToggle, onSave, onDelete, onCycle }: RowProps) {
+function TodoRow({ todo, cats, named, onToggle, onSave, onDelete, onCycle }: RowProps) {
   const e = useInlineEdit(todo.text, onSave)
 
   if (e.editing)
@@ -313,8 +316,8 @@ function TodoRow({ todo, cats, onToggle, onSave, onDelete, onCycle }: RowProps) 
     <div key="view" className={'task' + (todo.done ? ' done' : '')}>
       <input type="checkbox" checked={todo.done} aria-label={todo.text} onChange={(ev) => onToggle(ev.target.checked)} />
       <button type="button" className="t" onClick={e.start}>{todo.text}</button>
-      <button type="button" className="chip" style={catStyle(cats, todo.category_id)} aria-label={`카테고리 바꾸기: 지금 ${catName(cats, todo.category_id)}`} onClick={onCycle}>
-        {catName(cats, todo.category_id)}
+      <button type="button" className="chip" style={catStyle(cats, todo.category_id)} aria-label={`카테고리 바꾸기: 지금 ${catName(named, todo.category_id)}`} onClick={onCycle}>
+        {catName(named, todo.category_id)}
       </button>
     </div>
   )

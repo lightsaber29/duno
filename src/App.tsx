@@ -2,13 +2,22 @@ import { useCallback, useEffect, useState } from 'react'
 import { useSession } from './auth/useSession'
 import { Login } from './auth/Login'
 import { supabase } from './lib/supabase'
-import { loadNotes, loadSetup, loadTodos, loadWeek, type Setup, type Todo, type Week } from './lib/db'
+import { loadNotes, loadSetup, loadTargets, loadTodos, loadWeek, loadWeekRatios, type Setup, type Todo, type Week } from './lib/db'
+import type { WeekRatio } from './lib/pyramid'
 import { addDays, shouldClose, today, weekStart } from './lib/week'
 import { Home } from './Home'
 import { Close } from './Close'
 import { Onboard } from './Onboard'
 
-type CloseData = { lw: string; week: Week | null; todos: Todo[]; notes: Record<string, string>; thisGoal: string }
+type CloseData = {
+  lw: string
+  week: Week | null
+  todos: Todo[]
+  notes: Record<string, string>
+  thisGoal: string
+  ratios: WeekRatio[]
+  targets: { week_start: string; target_minutes: number | null }[]
+}
 
 export default function App() {
   const session = useSession()
@@ -38,10 +47,9 @@ function Signed({ onError }: { onError: (e: unknown) => void }) {
     // 실패하면 undefined로 둔다: 진입 화면으로 보내면 이미 있는 핵심목표를 또 만들려 한다
     loadSetup().then(setSetup).catch(onError)
     const lw = addDays(weekStart(today()), -7)
-    // 제안 계산에 지난주까지 4주가 필요하다
-    Promise.all([loadWeek(lw), loadTodos(addDays(lw, -21), addDays(lw, 6)), loadWeek(addDays(lw, 7)), loadNotes(lw, addDays(lw, 6))])
-      .then(([week, todos, tw, notes]) =>
-        setClose(shouldClose(week, todos.filter((x) => x.date >= lw).length) ? { lw, week, todos, notes, thisGoal: tw?.goal ?? '' } : null),
+    Promise.all([loadWeek(lw), loadTodos(lw, addDays(lw, 6)), loadWeek(addDays(lw, 7)), loadNotes(lw, addDays(lw, 6)), loadWeekRatios(), loadTargets()])
+      .then(([week, todos, tw, notes, ratios, targets]) =>
+        setClose(shouldClose(week, todos.length) ? { lw, week, todos, notes, thisGoal: tw?.goal ?? '', ratios, targets } : null),
       )
       .catch((e) => {
         onError(e)

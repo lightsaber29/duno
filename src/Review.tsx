@@ -4,7 +4,7 @@ import { catName, catStyle, nextCat } from './lib/cats'
 import { fmtMinutes, timeStats } from './lib/pyramid'
 import { addDays, parseKey, today } from './lib/week'
 
-type Props = { cats: Category[]; onClose: (date: string) => void; onError: (e: unknown) => void }
+type Props = { cats: Category[]; named: Category[]; onClose: (date: string) => void; onError: (e: unknown) => void } // named: 지운 카테고리 포함, 라벨 이름용
 
 const WORD = ['그제', '어제', '오늘']
 const clamp = (v: string | number, max: number) => Math.max(0, Math.min(max, Math.floor(+v || 0)))
@@ -17,7 +17,7 @@ const md = (k: string) => {
  * 저녁 회고: 오늘·어제·그제 할 일마다 쓴 시간, 목록에 없던 일, 회고 한 줄. 문구는 프로토타입(킥보드 phase2.html).
  * 프로토타입처럼 "저장"과 "돌아가기" 모두 적은 것을 남긴다: 할 일 칸을 벗어날 때 저장하고, 닫을 때 남은 것을 한 번 더.
  */
-export function Review({ cats, onClose, onError }: Props) {
+export function Review({ cats, named, onClose, onError }: Props) {
   const t = today()
   const dates = [addDays(t, -2), addDays(t, -1), t]
   const [date, setDate] = useState(t)
@@ -100,14 +100,14 @@ export function Review({ cats, onClose, onError }: Props) {
                   type="button"
                   className="chip"
                   style={catStyle(cats, x.category_id)}
-                  aria-label={`카테고리 바꾸기: 지금 ${catName(cats, x.category_id)}`}
+                  aria-label={`카테고리 바꾸기: 지금 ${catName(named, x.category_id)}`}
                   onClick={() => {
                     const category_id = nextCat(cats, x.category_id)
                     setTodos((ts) => ts && ts.map((y) => (y.id === x.id ? { ...y, category_id } : y)))
                     updateTodo(x.id, { category_id }).catch(fail)
                   }}
                 >
-                  {catName(cats, x.category_id)}
+                  {catName(named, x.category_id)}
                 </button>
               </div>
               <div className="hm">

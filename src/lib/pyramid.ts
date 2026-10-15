@@ -54,39 +54,6 @@ export function verdict(rows: { name: string; diff: number | null }[]) {
   }
 }
 
-/**
- * 주간 마감 2단계 제안. todos는 지난주까지 4주 것.
- * - ratioPlan: 카테고리마다 (정한 + 실제) ÷ 2를 합 100으로
- * - timePlan: 치우친 카테고리마다 |차이|% × 주 평균 시간, 30분 단위. 0분은 뺀다
- * - otherTodos: 기타가 2시간 이상이고 카테고리가 5개 미만이면 새 카테고리로 옮길 후보
- */
-export function proposal<T extends Timed>(cats: Cat[], todos: T[]) {
-  const { total, rows } = timeStats(cats, todos)
-  const catRows = rows.filter((r) => r.id !== null)
-  const off = catRows.filter((r) => level(r.diff) === 'over' || level(r.diff) === 'under')
-  // (정한 + 실제)를 그대로 가중치로 쓰면 ÷ 2와 비율이 같고 정수라 반올림이 정확하다
-  const ratioPlan = largestRemainder(catRows.map((r) => r.ratio! + r.actual), 100, 0)
-  const days = new Set(todos.filter((t) => t.minutes > 0).map((t) => t.date)).size // 회고한 날 = 시간이 적힌 날
-  const weekly = days ? (total / days) * 7 : 0
-  const timePlan = off
-    .map((r) => ({ name: r.name, minutes: Math.round(((Math.abs(r.diff!) / 100) * weekly) / 30) * 30, more: r.diff! < 0 }))
-    .filter((p) => p.minutes > 0)
-  const other = rows[rows.length - 1]
-  return {
-    rows,
-    biased: off.length > 0,
-    ratioPlan,
-    timePlan,
-    otherTodos: other.minutes >= 120 && cats.length < 5 ? other.todos : null,
-  }
-}
-
-/** 새 카테고리는 10%로 시작하고 가장 큰 카테고리(동점이면 앞)에서 10%를 가져온다 */
-export function withNewCategory(ratios: number[]): number[] {
-  const i = ratios.indexOf(Math.max(...ratios))
-  return [...ratios.map((r, j) => (j === i ? r - 10 : r)), 10]
-}
-
 /** 분 → "2시간 30분", "45분", "0분" */
 export function fmtMinutes(m: number): string {
   const h = Math.floor(m / 60)
@@ -95,8 +62,6 @@ export function fmtMinutes(m: number): string {
   return [h && `${h}시간`, r && `${r}분`].filter(Boolean).join(' ')
 }
 
-/** "리서치 주 2시간 30분 줄이기" */
-export const planText = (p: { name: string; minutes: number; more: boolean }) => `${p.name} 주 ${fmtMinutes(p.minutes)} ${p.more ? '더' : '줄이기'}`
 
 export type WeekRatio = { week_start: string; category_id: string; ratio: number }
 
@@ -113,8 +78,9 @@ export function weekBasis(cats: Cat[], rows: WeekRatio[], ws: string): Cat[] {
 }
 
 /** 그 주의 주간 목표 시간(분): 그 주 이전에 정한 가장 최근 값. 한 번도 없으면 null */
-export function weekTarget(weeks: { week_start: string; target_minutes: number | null }[], ws: string): number | null {
-  const set = weeks.filter((w) => w.week_start <= ws && w.target_minutes !== null).sort((a, b) => (a.week_start < b.week_start ? 1 : -1))
+export function weekTarget(weeks: { week_start: string; target_minutes?: number | null }[], ws: string): number | null {
+  // 행은 있어도 값이 비었으면(null·없음) 건너뜀
+  const set = weeks.filter((w) => w.week_start <= ws && w.target_minutes != null).sort((a, b) => (a.week_start < b.week_start ? 1 : -1))
   return set[0]?.target_minutes ?? null
 }
 
@@ -133,9 +99,27 @@ export function nudge<T extends Timed>(cats: Cat[], todos: T[]) {
   return { id: r.id!, name: r.name, todo }
 }
 
-/** 카테고리를 지우면 그 몫을 남은 카테고리에 원래 비율대로 나눠 합 100 (D6). 남은 것이 다 0%면 똑같이 */
-export function withoutCategory(ratios: number[], i: number): number[] {
-  const rest = ratios.filter((_, j) => j !== i)
+/** 남은 비율을 원래 비율대로 합 100으로. 남은 게 다 0이면 똑같이 */
+function rescale(rest: number[]): number[] {
   if (!rest.length) return []
-  return rest.some((r) => r > 0) ? largestRemainder(rest, 100, 0) : equalSplit(rest.length)
+  const sum = rest.reduce((a, b) => a + b, 0)
+  return sum === 100 ? rest : sum > 0 ? largestRemainder(rest, 100, 0) : equalSplit(rest.length)
+}
+
+/**
+ * 주간 마감에서 카테고리를 지우고 더한 뒤의 핵심목표 비율(D6, WC-10: 마감에서 직접 고치지는 않는다).
+ * 지운 몫은 남은 카테고리에 원래 비율대로 나누고, 새 카테고리는 0%. 반환 순서 = 남긴 것 → 새 것
+ */
+export function coreAfter(ratios: number[], deleted: boolean[], added: number): number[] {
+  return [...rescale(ratios.filter((_, i) => !deleted[i])), ...Array(added).fill(0)]
+}
+
+/**
+ * 마감 3단계 이번 주 주간 비율의 기본값: 직전 주간 비율(없으면 핵심목표 비율, basis)에서 남긴 카테고리만 합 100으로, 새 카테고리는 0.
+ * 남긴 것에 비율이 하나도 없으면 전부 똑같이. 반환 순서 = keep → 새 것
+ */
+export function weeklyDefault(basis: Cat[], keep: string[], added: number): number[] {
+  const kept = keep.map((id) => basis.find((c) => c.id === id)?.ratio ?? 0)
+  if (!kept.some((r) => r > 0)) return equalSplit(keep.length + added)
+  return [...rescale(kept), ...Array(added).fill(0)]
 }
