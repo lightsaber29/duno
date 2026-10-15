@@ -1,7 +1,8 @@
-// 피라미드·주간 마감 계산. 규칙 근거: docs/킥보드 phase2.md "계산 규칙", docs/킥보드 phase2 개발 계획.md "계산"
-import { largestRemainder } from './ratio.ts'
+// 피라미드(편향 보기)·주간 마감·할 일 입력 권유 계산.
+// 규칙 근거: docs/킥보드 phase2.md "계산 규칙", docs/자전거 phase3.md 5·6절, docs/자전거 phase3 개발 계획.md "계산"
+import { equalSplit, largestRemainder } from './ratio.ts'
 
-/** 치우침 기준 %p */
+/** 편향 기준 %p. 이 값을 넘어야(초과) 더/덜 (phase3 BI-3 "15를 넘는") */
 export const TH = 15
 
 export type Cat = { id: string; name: string; ratio: number }
@@ -43,7 +44,7 @@ export function timeStats<T extends Timed>(cats: Cat[], todos: T[]) {
 }
 
 export type Level = 'over' | 'under' | 'ok'
-export const level = (diff: number | null): Level | null => (diff === null ? null : diff >= TH ? 'over' : diff <= -TH ? 'under' : 'ok')
+export const level = (diff: number | null): Level | null => (diff === null ? null : diff > TH ? 'over' : diff < -TH ? 'under' : 'ok')
 
 /** 판정 문장 재료: 많이 쓴 곳, 덜 쓴 곳 이름 */
 export function verdict(rows: { name: string; diff: number | null }[]) {
@@ -96,3 +97,45 @@ export function fmtMinutes(m: number): string {
 
 /** "리서치 주 2시간 30분 줄이기" */
 export const planText = (p: { name: string; minutes: number; more: boolean }) => `${p.name} 주 ${fmtMinutes(p.minutes)} ${p.more ? '더' : '줄이기'}`
+
+export type WeekRatio = { week_start: string; category_id: string; ratio: number }
+
+/**
+ * 그 주의 기준 비율(주간 비율). 그 주 묶음 → 그 이전 가장 최근 묶음 → 핵심목표 비율(cats.ratio) (WG-5, D7).
+ * 고른 묶음에 없는 카테고리(나중에 더한 것)는 0%.
+ */
+export function weekBasis(cats: Cat[], rows: WeekRatio[], ws: string): Cat[] {
+  const prior = rows.filter((r) => r.week_start <= ws)
+  if (!prior.length) return cats
+  const latest = prior.reduce((m, r) => (r.week_start > m ? r.week_start : m), '')
+  const set = new Map(prior.filter((r) => r.week_start === latest).map((r) => [r.category_id, r.ratio]))
+  return cats.map((c) => ({ ...c, ratio: set.get(c.id) ?? 0 }))
+}
+
+/** 그 주의 주간 목표 시간(분): 그 주 이전에 정한 가장 최근 값. 한 번도 없으면 null */
+export function weekTarget(weeks: { week_start: string; target_minutes: number | null }[], ws: string): number | null {
+  const set = weeks.filter((w) => w.week_start <= ws && w.target_minutes !== null).sort((a, b) => (a.week_start < b.week_start ? 1 : -1))
+  return set[0]?.target_minutes ?? null
+}
+
+/**
+ * 할 일 입력 권유(NU-2~5, D5). todos는 지금까지 전부, cats는 지우지 않은 카테고리(핵심목표 비율).
+ * 15 넘게 덜 쓴 카테고리 중 가장 많이 덜 쓴 것 1개(같으면 앞 카테고리),
+ * 그 카테고리의 1분 이상 할 일 중 가장 짧은 것(같으면 최근 날짜). 할 일이 없으면 카테고리만.
+ */
+export function nudge<T extends Timed>(cats: Cat[], todos: T[]) {
+  const under = timeStats(cats, todos)
+    .rows.filter((r) => level(r.diff) === 'under')
+    .sort((a, b) => a.diff! - b.diff!) // 안정 정렬이라 같으면 카테고리 순서
+  if (!under.length) return null
+  const r = under[0]
+  const todo = r.todos.reduce<T | null>((best, t) => (!best || t.minutes < best.minutes || (t.minutes === best.minutes && t.date > best.date) ? t : best), null)
+  return { id: r.id!, name: r.name, todo }
+}
+
+/** 카테고리를 지우면 그 몫을 남은 카테고리에 원래 비율대로 나눠 합 100 (D6). 남은 것이 다 0%면 똑같이 */
+export function withoutCategory(ratios: number[], i: number): number[] {
+  const rest = ratios.filter((_, j) => j !== i)
+  if (!rest.length) return []
+  return rest.some((r) => r > 0) ? largestRemainder(rest, 100, 0) : equalSplit(rest.length)
+}
