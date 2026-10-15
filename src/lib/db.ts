@@ -87,8 +87,9 @@ export async function loadNotes(from: string, to: string): Promise<Record<string
   return Object.fromEntries(rows.map((r) => [r.date, r.note]))
 }
 
-export async function saveNote(date: string, note: string): Promise<void> {
-  must(await supabase.from('days').upsert({ date, note }, { onConflict: 'user_id,date' }))
+/** 그날 회고 저장: 회고 한 줄과 저장한 때(0분으로 저장해도 기록한 날, RV-5) */
+export async function saveReview(date: string, note: string): Promise<void> {
+  must(await supabase.from('days').upsert({ date, note, reviewed_at: new Date().toISOString() }, { onConflict: 'user_id,date' }))
 }
 
 /** from~to 주(월요일)의 목표. week_start → goal */
@@ -112,10 +113,10 @@ export async function loadWeekRatios(): Promise<WeekRatio[]> {
   return must(await supabase.from('week_ratios').select('week_start, category_id, ratio')) as WeekRatio[]
 }
 
-/** 그날 할 일 입력 권유를 닫았는지(NU-6) */
-export async function loadNudgeClosed(date: string): Promise<boolean> {
-  const row = must(await supabase.from('days').select('nudge_closed').eq('date', date).maybeSingle<{ nudge_closed: boolean }>())
-  return row?.nudge_closed ?? false
+/** 그날 권유를 닫았는지(NU-6), 회고를 저장했는지(RV-5) */
+export async function loadDay(date: string): Promise<{ nudgeClosed: boolean; reviewed: boolean }> {
+  const row = must(await supabase.from('days').select('nudge_closed, reviewed_at').eq('date', date).maybeSingle<{ nudge_closed: boolean; reviewed_at: string | null }>())
+  return { nudgeClosed: row?.nudge_closed ?? false, reviewed: !!row?.reviewed_at }
 }
 
 /** 그날 권유를 닫는다. 회고 한 줄은 그대로 */
