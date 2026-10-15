@@ -5,6 +5,7 @@ import { fmtMinutes, nudge } from './lib/pyramid'
 import { addDays, isEvening, parseKey, rate, today, weekDays, weekKind, weekRange, weekStart } from './lib/week'
 import { Review } from './Review'
 import { Pyramid } from './Pyramid'
+import { useBack } from './lib/useBack'
 
 const WD = ['일', '월', '화', '수', '목', '금', '토']
 const GOAL_LABEL = { past: '지난주 목표', current: '이번 주 목표', future: '다음 주 목표' }
@@ -107,20 +108,18 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
     }
   }
 
-  if (review)
-    return (
-      <Review
-        cats={cats}
-        named={named}
-        onError={onError}
-        onClose={(date) => {
-          setReview(false)
-          setWs(weekStart(date))
-          setSel(date)
-          setVersion((v) => v + 1)
-        }}
-      />
-    )
+  /** 회고에서 돌아오면 그날을 고르고 다시 불러온다(목록 밖 할 일은 저장 안 해도 이미 들어가 있다) */
+  function closeReview(date = t) {
+    setReview(false)
+    setWs(weekStart(date))
+    setSel(date)
+    setVersion((v) => v + 1)
+  }
+  // 브라우저 뒤로 가기 = 돌아가기 버튼(F2). 회고에서 저장 안 한 시간은 "저장 안 하고 나가기"와 같이 버려진다
+  useBack(review, closeReview)
+  useBack(pyramid, () => setPyramid(false))
+
+  if (review) return <Review cats={cats} named={named} onError={onError} onClose={closeReview} />
 
   if (pyramid) return <Pyramid setup={setup} onClose={() => setPyramid(false)} onSignOut={onSignOut} onError={onError} />
 

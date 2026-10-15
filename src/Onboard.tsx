@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useBack } from './lib/useBack'
 import { createSetup, type Setup } from './lib/db'
 import { equalSplit } from './lib/ratio'
 import { targetMinutes, today, weekStart } from './lib/week'
@@ -12,6 +13,9 @@ type Row = { name: string; ratio: number }
  */
 export function Onboard({ onDone, onError }: Props) {
   const [step, setStep] = useState(1)
+  // 브라우저 뒤로 가기 = 이전 버튼(F2)
+  useBack(step >= 2, () => setStep(1))
+  useBack(step >= 3, () => setStep(2))
   const [goal, setGoal] = useState('')
   const [rows, setRows] = useState<Row[]>(() => equalSplit(3).map((ratio) => ({ name: '', ratio })))
   const [hours, setHours] = useState('20') // 주간 목표 시간

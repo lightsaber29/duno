@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useBack } from './lib/useBack'
 import { closeWeek, skipWeek, type Category, type Changes, type Setup, type Todo, type Week } from './lib/db'
 import { coreAfter, fmtMinutes, level, timeStats, weekBasis, weekTarget, type WeekRatio } from './lib/pyramid'
 import { equalSplit } from './lib/ratio'
@@ -40,6 +41,9 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, ratios, targets
   const nowTarget = weekTarget(targets, tw)
 
   const [step, setStep] = useState(1)
+  // 브라우저 뒤로 가기 = 이전 버튼(F2)
+  useBack(step >= 2, () => setStep(1))
+  useBack(step >= 3, () => setStep(2))
   const [good, setGood] = useState(week?.good ?? '')
   const [bad, setBad] = useState(week?.bad ?? '')
   const [edits, setEdits] = useState<Edit[]>(() => cats.map((c) => ({ key: c.id, id: c.id, name: c.name, gone: false })))
