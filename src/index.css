@@ -1022,3 +1022,15 @@ button.t {
   flex-basis: 100%;
   margin: 2px 0 0;
 }
+/* 상단 줄: 주 범위와 버튼 묶음이 각자 한 덩어리로(편향 보기를 글자로 바꾼 뒤 320px 폭에서 줄이 깨졌다, D3) */
+.wk-h > span {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.wk-h button {
+  padding: 0 6px;
+}
+.wk-h .pill {
+  padding: 0 9px;
+}
