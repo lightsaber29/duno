@@ -53,23 +53,28 @@ export async function saveWeek(weekStart: string, patch: Partial<Week>): Promise
 }
 
 export type Category = { id: string; name: string; ratio: number }
-/** cats: 지우지 않은 카테고리(핵심목표 비율), gone: 지운 카테고리(라벨 이름 보이기용, TD-3) */
-export type Setup = { coreGoal: string; cats: Category[]; gone: Category[] }
+/** cats: 지우지 않은 카테고리(핵심목표 비율), gone: 지운 카테고리(라벨 이름·분모용), startedOn: 진입일("지금까지"의 시작, BI-3) */
+export type Setup = { coreGoal: string; cats: Category[]; gone: Category[]; startedOn: string }
 
 /** 핵심목표와 카테고리. 핵심목표가 없으면 null → 진입 화면 */
 export async function loadSetup(): Promise<Setup | null> {
-  const p = must(await supabase.from('profiles').select('core_goal').maybeSingle<{ core_goal: string }>())
+  const p = must(await supabase.from('profiles').select('core_goal, started_on').maybeSingle<{ core_goal: string; started_on: string }>())
   if (!p) return null
   const rows = must(await supabase.from('categories').select('id, name, ratio, deleted_at').order('position')) as (Category & { deleted_at: string | null })[]
   const pick = (gone: boolean) => rows.filter((r) => !!r.deleted_at === gone).map(({ id, name, ratio }) => ({ id, name, ratio }))
-  return { coreGoal: p.core_goal, cats: pick(false), gone: pick(true) }
+  return { coreGoal: p.core_goal, cats: pick(false), gone: pick(true), startedOn: p.started_on }
 }
 
 /**
  * 진입 화면 끝. 카테고리 → 주간 목표 시간(이번 주부터) → 핵심목표 순서라, 중간에 끊기면 다음에 진입 화면이 다시 뜬다.
- * target: 이번 주 월요일과 주간 목표 시간(분)
+ * target: 이번 주 월요일과 주간 목표 시간(분), startedOn: 진입일(기기 날짜, 할 일 날짜와 같은 기준)
  */
-export async function createSetup(coreGoal: string, cats: { name: string; ratio: number }[], target: { week: string; minutes: number }): Promise<Setup> {
+export async function createSetup(
+  coreGoal: string,
+  cats: { name: string; ratio: number }[],
+  target: { week: string; minutes: number },
+  startedOn: string,
+): Promise<Setup> {
   // 진입은 핵심목표가 없을 때만 오니, 지난번에 끊겨 남은 카테고리가 있으면 지우고 새로 넣는다.
   // 조건 없는 delete는 Supabase(safeupdate)가 막아서 항상 참인 조건을 단다
   must(await supabase.from('categories').delete().not('id', 'is', null))
@@ -77,8 +82,8 @@ export async function createSetup(coreGoal: string, cats: { name: string; ratio:
     await supabase.from('categories').insert(cats.map((c, i) => ({ ...c, position: i }))).select('id, name, ratio').order('position'),
   ) as Category[]
   await saveWeek(target.week, { target_minutes: target.minutes })
-  must(await supabase.from('profiles').insert({ core_goal: coreGoal }))
-  return { coreGoal, cats: rows, gone: [] }
+  must(await supabase.from('profiles').insert({ core_goal: coreGoal, started_on: startedOn }))
+  return { coreGoal, cats: rows, gone: [], startedOn }
 }
 
 /** from~to 회고 한 줄. 날짜 → 글 */
@@ -87,8 +92,9 @@ export async function loadNotes(from: string, to: string): Promise<Record<string
   return Object.fromEntries(rows.map((r) => [r.date, r.note]))
 }
 
-export async function saveNote(date: string, note: string): Promise<void> {
-  must(await supabase.from('days').upsert({ date, note }, { onConflict: 'user_id,date' }))
+/** 그날 회고 저장: 회고 한 줄과 저장한 때(0분으로 저장해도 기록한 날, RV-5) */
+export async function saveReview(date: string, note: string): Promise<void> {
+  must(await supabase.from('days').upsert({ date, note, reviewed_at: new Date().toISOString() }, { onConflict: 'user_id,date' }))
 }
 
 /** from~to 주(월요일)의 목표. week_start → goal */
@@ -112,10 +118,10 @@ export async function loadWeekRatios(): Promise<WeekRatio[]> {
   return must(await supabase.from('week_ratios').select('week_start, category_id, ratio')) as WeekRatio[]
 }
 
-/** 그날 할 일 입력 권유를 닫았는지(NU-6) */
-export async function loadNudgeClosed(date: string): Promise<boolean> {
-  const row = must(await supabase.from('days').select('nudge_closed').eq('date', date).maybeSingle<{ nudge_closed: boolean }>())
-  return row?.nudge_closed ?? false
+/** 그날 권유를 닫았는지(NU-6), 회고를 저장했는지(RV-5) */
+export async function loadDay(date: string): Promise<{ nudgeClosed: boolean; reviewed: boolean }> {
+  const row = must(await supabase.from('days').select('nudge_closed, reviewed_at').eq('date', date).maybeSingle<{ nudge_closed: boolean; reviewed_at: string | null }>())
+  return { nudgeClosed: row?.nudge_closed ?? false, reviewed: !!row?.reviewed_at }
 }
 
 /** 그날 권유를 닫는다. 회고 한 줄은 그대로 */
@@ -141,4 +147,9 @@ export async function deleteCategory(id: string): Promise<void> {
 export async function saveWeekRatios(weekStart: string, rows: { category_id: string; ratio: number }[]): Promise<void> {
   must(await supabase.from('week_ratios').delete().eq('week_start', weekStart))
   must(await supabase.from('week_ratios').insert(rows.map((r) => ({ week_start: weekStart, ...r }))))
+}
+
+/** 비율 스냅샷: 카테고리를 더하거나 지우기 직전 핵심목표 비율(TD-6). 저장만 하고 보여 주지 않는다 */
+export async function saveSnapshot(cats: Category[]): Promise<void> {
+  must(await supabase.from('ratio_snapshots').insert({ ratios: cats.map((c) => ({ category_id: c.id, name: c.name, ratio: c.ratio })) }))
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { addTodo, closeNudge, deleteTodo, loadNudgeClosed, loadTodos, loadWeek, saveWeek, updateTodo, type Category, type Setup, type Todo } from './lib/db'
+import { addTodo, closeNudge, deleteTodo, loadDay, loadTodos, loadWeek, saveWeek, updateTodo, type Category, type Setup, type Todo } from './lib/db'
 import { catName, catStyle, nextCat } from './lib/cats'
 import { fmtMinutes, nudge } from './lib/pyramid'
 import { addDays, isEvening, parseKey, rate, today, weekDays, weekKind, weekRange, weekStart } from './lib/week'
@@ -24,7 +24,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const cur = loaded?.ws === ws ? loaded : null
   const [draft, setDraft] = useState('')
-  const [pick, setPick] = useState<string | null>(cats[0]?.id ?? null) // 새 할 일 카테고리. 마지막으로 고른 것
+  const [pick, setPick] = useState<string | null>(null) // 새 할 일 카테고리. 처음엔 기타(TD-1), 고르면 이 화면에서 유지(E3)
   const [review, setReview] = useState(false)
   const [pyramid, setPyramid] = useState(false)
   const [version, setVersion] = useState(0) // 회고에서 돌아오면 다시 불러오기
@@ -42,15 +42,15 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
     reload()
   }, [reload, version])
 
-  // 할 일 입력 권유(phase3 4.5): 지금까지 기록 전부와 오늘 닫았는지. 회고에서 돌아오면 다시
-  const [nudgeData, setNudgeData] = useState<{ todos: Todo[]; closed: boolean } | null>(null)
+  // 할 일 입력 권유(4.5): 지금까지 기록, 오늘 권유를 닫았는지·회고를 저장했는지. 회고에서 돌아오면 다시
+  const [nudgeData, setNudgeData] = useState<{ todos: Todo[]; closed: boolean; reviewed: boolean } | null>(null)
   useEffect(() => {
-    Promise.all([loadTodos('1970-01-01', t), loadNudgeClosed(t)])
-      .then(([todos, closed]) => setNudgeData({ todos, closed }))
+    Promise.all([loadTodos(setup.startedOn, t), loadDay(t)]) // "지금까지"는 진입일부터(BI-3)
+      .then(([todos, day]) => setNudgeData({ todos, closed: day.nudgeClosed, reviewed: day.reviewed }))
       .catch(onError)
-  }, [t, version, onError])
+  }, [t, version, onError, setup.startedOn])
   // 권유는 "오늘" 목록에 더하니(NU-7) 오늘을 볼 때만
-  const suggestion = nudgeData && !nudgeData.closed && sel === t ? nudge(cats, nudgeData.todos) : null
+  const suggestion = nudgeData && !nudgeData.closed && sel === t ? nudge(cats, nudgeData.todos, setup.gone.map((c) => c.id)) : null
 
   function dismissNudge() {
     setNudgeData((d) => d && { ...d, closed: true })
@@ -126,8 +126,8 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
 
   const s = parseKey(sel)
   const list = of(sel)
-  // N1: 실제 알림 대신, 9시 이후 열었는데 오늘 시간이 하나도 안 적혀 있으면 띠
-  const reviewNudge = ws === thisWeek && cur && isEvening() && of(t).every((x) => x.minutes === 0)
+  // 실제 알림 대신(E1), 9시 이후 열었는데 오늘 회고를 저장하지 않았으면 띠(0분으로 저장해도 회고한 날, RV-5)
+  const reviewNudge = ws === thisWeek && nudgeData && !nudgeData.reviewed && isEvening()
   return (
     <main className="home">
       {reviewNudge && (
@@ -149,7 +149,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
           <span>
             {ws !== thisWeek && <button type="button" className="now" onClick={() => goWeek(0)}>이번 주로</button>}
             <button type="button" className="pill" onClick={() => setReview(true)}>회고</button>
-            <button type="button" className="pill" aria-label="피라미드" onClick={() => setPyramid(true)}>△</button>
+            <button type="button" className="pill" aria-label="편향 보기" onClick={() => setPyramid(true)}>△</button>
           </span>
         </div>
         <div className="goal">

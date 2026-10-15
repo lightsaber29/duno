@@ -6,6 +6,7 @@ import {
   deleteCategory,
   renameCategory,
   saveWeek,
+  saveSnapshot,
   saveWeekRatios,
   setRatios,
   type Category,
@@ -14,7 +15,7 @@ import {
   type Todo,
   type Week,
 } from './lib/db'
-import { coreAfter, fmtMinutes, level, timeStats, weekBasis, weekTarget, weeklyDefault, type WeekRatio } from './lib/pyramid'
+import { coreAfter, fmtMinutes, level, timeStats, weekBasis, weekTarget, type WeekRatio } from './lib/pyramid'
 import { equalSplit } from './lib/ratio'
 import { addDays, parseKey, targetMinutes, weekDays, weekRange } from './lib/week'
 import { Verdict } from './Pyramid'
@@ -41,14 +42,15 @@ const dl = (k: string) => {
 type Edit = { key: string; id?: string; name: string; gone: boolean }
 
 /**
- * 주간 마감 3단계(phase3 4.8): 돌아보기 → 지난주 정리(기록 시간 vs 주간 목표 시간, 주간 비율 기준 편향, 카테고리 추가·이름 바꾸기·지우기)
+ * 주간 마감 3단계(phase3·4 4.8): 돌아보기 → 지난주 정리(기록 시간 vs 주간 목표 시간, 주간 비율 기준 편향, 카테고리 추가·이름 바꾸기·지우기)
  * → 이번 주 계획(주간 목표, 주간 비율, 주간 목표 시간, 못 끝낸 일 복사). 핵심목표 비율은 직접 고치지 않는다(WC-10, D6).
  */
 export function Close({ setup, lw, week, todos, notes, thisGoal, ratios, targets, onDone, onError }: Props) {
   const { cats } = setup
   const tw = addDays(lw, 7)
   const undone = todos.filter((t) => !t.done)
-  const lastStats = timeStats(weekBasis(cats, ratios, lw), todos) // 지난주는 그 주의 주간 비율 기준(WC-5)
+  // 지난주는 그 주의 주간 비율 기준(WC-5, 없으면 핵심목표 비율). 지운 카테고리 시간은 분모에만(TD-4)
+  const lastStats = timeStats(weekBasis(cats, ratios, lw), todos, setup.gone.map((c) => c.id))
   const lastTarget = weekTarget(targets, lw)
   const nowTarget = weekTarget(targets, tw)
 
@@ -83,12 +85,11 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, ratios, targets
     return n
   }
 
-  /** 3단계로: 주간 비율 기본값 = 이번 주에 이어 쓸 주간 비율에서 남긴 것만, 새 것 0. 카테고리를 바꿨으면 다시 계산 */
+  /** 3단계로: 주간 비율 기본값 = 카테고리를 바꾼 뒤의 핵심목표 비율(수정하지 않은 주는 핵심목표 비율, phase4 WG-5). 카테고리를 바꿨으면 다시 계산 */
   function toPlan() {
     const keys = [...keep, ...fresh.map((e) => e.key)]
     if (keys.some((k) => !(k in weekly)) || Object.keys(weekly).length !== keys.length) {
-      const d = weeklyDefault(weekBasis(cats, ratios, tw), keep, fresh.length)
-      setWeekly(Object.fromEntries(keys.map((k, i) => [k, d[i]])))
+      setWeekly(Object.fromEntries(keys.map((k, i) => [k, core[i]])))
     }
     setStep(3)
   }
@@ -100,6 +101,8 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, ratios, targets
       let next = setup
       if (!skip) {
         // ponytail: 요청이 여러 번이라 한 묶음이 아니다. 마감 표시 전에 끊기면 다음에 열 때 다시 뜨고, 새 카테고리·복사가 겹칠 수 있음. 문제 되면 DB 함수(rpc) 하나로
+        const goneIds = new Set(edits.filter((e) => e.gone && e.id).map((e) => e.id))
+        if (fresh.length || goneIds.size) await saveSnapshot(cats) // 더하거나 지우기 직전 핵심목표 비율(TD-6)
         for (const e of edits) {
           const c = cats.find((x) => x.id === e.id)
           if (c && e.gone) await deleteCategory(c.id)
@@ -116,9 +119,8 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, ratios, targets
         await saveWeekRatios(tw, live.map((e) => ({ category_id: keyToId(e.key), ratio: weekly[e.key] ?? 0 })))
         await saveWeek(tw, { goal: goal.trim(), target_minutes: minutes })
         // 옮기지 않고 복사: 지난주 기록이 바뀌지 않게. 지운 카테고리 일은 기타로. 순서 유지를 위해 하나씩
-        const goneIds = new Set(edits.filter((e) => e.gone && e.id).map((e) => e.id))
         for (const t of undone) if (pick.has(t.id)) await addTodo(tw, t.text, t.category_id && goneIds.has(t.category_id) ? null : t.category_id)
-        const before = weeklyDefault(weekBasis(cats, ratios, tw), keep, fresh.length)
+        const before = core // 주간 비율 기본값
         const changes: Changes = {
           goal: goal.trim() !== thisGoal,
           ratio: live.some((e, i) => (weekly[e.key] ?? 0) !== before[i]),
