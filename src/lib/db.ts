@@ -1,4 +1,6 @@
 import { supabase } from './supabase'
+import { largestRemainder } from './ratio'
+import { localDate } from './format'
 
 export type Plan = { id: string; goal: string; notify_at: string }
 export type Subgoal = { id: string; name: string; ratio: number; position: number; removed_at: string | null }
@@ -84,4 +86,32 @@ export async function saveEntry(planId: string, date: string, minutes: number | 
 /** 검증용: 현재 상태 화면을 연 시각 */
 export function logStatusView(userId: string): void {
   void supabase.from('status_views').insert({ user_id: userId })
+}
+
+export async function deleteEntry(planId: string, date: string): Promise<void> {
+  must(await supabase.from('entries').delete().eq('plan_id', planId).eq('date', date))
+}
+
+export async function deleteAllEntries(planId: string): Promise<void> {
+  must(await supabase.from('entries').delete().eq('plan_id', planId))
+}
+
+/** 테스트용 예시 데이터(seed.sql과 같은 모양). 오늘 포함 아흐레, 하루 휴식. 세부 목표가 넷보다 적으면 있는 것만 쓴다. */
+export async function seedEntries(planId: string, subgoalIds: string[]): Promise<void> {
+  const shape: [number, number | null, [number | null, number][]][] = [
+    [-8, 180, [[0, 70], [1, 20], [null, 10]]],
+    [-7, 240, [[0, 60], [2, 30], [3, 10]]],
+    [-6, 120, [[0, 50], [1, 50]]],
+    [-5, 300, [[0, 70], [2, 20], [null, 10]]],
+    [-4, null, []],
+    [-3, 90, [[0, 40], [3, 60]]],
+    [-2, 210, [[0, 60], [1, 20], [2, 20]]],
+    [-1, 150, [[0, 50], [2, 30], [3, 20]]],
+    [0, 240, [[0, 60], [1, 10], [2, 10], [3, 10], [null, 10]]],
+  ]
+  for (const [offset, minutes, raw] of shape) {
+    const kept = raw.filter(([i]) => i === null || i < subgoalIds.length)
+    const ratios = largestRemainder(kept.map(([, r]) => r))
+    await saveEntry(planId, localDate(offset), minutes, kept.map(([i], k) => ({ subgoal_id: i === null ? null : subgoalIds[i], ratio: ratios[k] })))
+  }
 }

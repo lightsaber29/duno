@@ -5,7 +5,7 @@ import { actualRatios, totalMinutes } from '../lib/ratio'
 import { fmtDiff, fmtMinutes, localDate } from '../lib/format'
 import type { PlanData } from '../lib/db'
 
-const PREV_COLOR = '#cfcfcf'
+const PREV_COLOR = 'var(--prev)'
 
 type Props = { data: PlanData; onWrite: () => void; onView: () => void }
 
@@ -37,24 +37,27 @@ export function Status({ data, onWrite, onView }: Props) {
     { key: 'prev', name: '이전 세부 목표', color: PREV_COLOR, actual: actual.get('prev') ?? 0, min: minutes.get('prev') ?? 0 },
     { key: 'other', name: '기타', color: OTHER_COLOR, actual: actual.get('other') ?? 0, min: minutes.get('other') ?? 0 },
   ].filter((r) => r.min > 0)
-  const over = rows.filter((r) => r.actual > r.plan).map((r) => r.name)
+  // 계획보다 가장 많이 넘친 세부 목표. 띠에 이름을 붙이고 한 줄 문장을 만든다
+  const top = hasRecords ? rows.reduce<(typeof rows)[number] | null>((t, r) => (r.actual > r.plan && (!t || r.actual - r.plan > t.actual - t.plan) ? r : t), null) : null
 
   const planSlices = rows.map((r) => ({ key: r.key, name: r.name, ratio: r.plan, color: r.color }))
   const actualSlices = [...rows, ...extra].filter((r) => r.actual > 0).map((r) => ({ key: r.key, name: r.name, ratio: r.actual, color: r.color }))
 
   return (
     <main className="screen">
-      <h1>{data.plan.goal}</h1>
+      <div className="stack" style={{ gap: 4 }}>
+        <span className="label">핵심 목표</span>
+        <h1 style={{ fontSize: 20 }}>{data.plan.goal}</h1>
+      </div>
       <div className="row">
-        <div className="seg">
+        <div className="seg" role="group" aria-label="기간">
           <button type="button" className={period === 'week' ? 'on' : ''} onClick={() => setPeriod('week')}>최근 1주</button>
           <button type="button" className={period === 'all' ? 'on' : ''} onClick={() => setPeriod('all')}>총 시간</button>
         </div>
         {period === 'week' && (
-          <div className="seg">
-            <button type="button" className={chart === 'bar' ? 'on' : ''} onClick={() => setChart('bar')}>띠</button>
-            <button type="button" className={chart === 'pie' ? 'on' : ''} onClick={() => setChart('pie')}>원</button>
-          </div>
+          <button type="button" className="link" style={{ marginLeft: 'auto' }} onClick={() => setChart(chart === 'bar' ? 'pie' : 'bar')}>
+            {chart === 'bar' ? '원그래프로 보기' : '띠그래프로 보기'}
+          </button>
         )}
       </div>
 
@@ -62,10 +65,10 @@ export function Status({ data, onWrite, onView }: Props) {
         <>
           {chart === 'bar' ? (
             <div className="bars">
-              <small>계획</small>
-              <Bar slices={planSlices} />
-              <small>실제</small>
-              {hasRecords ? <Bar slices={actualSlices} /> : <Empty onWrite={onWrite} />}
+              <span className="label">계획</span>
+              <Bar slices={planSlices} named={top?.key} />
+              <span className="label">실제</span>
+              {hasRecords ? <Bar slices={actualSlices} named={top?.key} /> : <Empty onWrite={onWrite} />}
             </div>
           ) : (
             <div className="pies">
@@ -73,28 +76,33 @@ export function Status({ data, onWrite, onView }: Props) {
               <div><small>실제</small>{hasRecords ? <Dial slices={actualSlices} selected={null} onSelect={() => {}} onDrag={() => {}} size={150} /> : <Empty onWrite={onWrite} />}</div>
             </div>
           )}
-          <ul className="ratio-list">
+          {top && (
+            <div className="insight card">
+              <p>최근 1주 동안 <b>{top.name}</b>에 시간이 많이 갔네</p>
+              <small>계획은 {top.plan}%였는데 {top.actual}%를 썼어</small>
+            </div>
+          )}
+          <ul className="list">
             {rows.map((r) => (
-              <li key={r.key}>
+              <li key={r.key} className={r.key === top?.key ? 'top' : ''}>
                 <span className="dot" style={{ background: r.color }} />
-                <span className="name">{r.name}</span>
+                <span className="name" style={{ flex: 'none' }}>{r.name}</span>
                 <span className="sub">계획 {r.plan}% · 실제 {hasRecords ? `${r.actual}%` : '—'}</span>
-                <strong className="diff">{hasRecords ? fmtDiff(r.actual - r.plan) : ''}</strong>
+                <span className="diff">{hasRecords ? fmtDiff(r.actual - r.plan) : ''}</span>
               </li>
             ))}
             {extra.map((r) => (
               <li key={r.key}>
                 <span className="dot" style={{ background: r.color }} />
-                <span className="name">{r.name}</span>
+                <span className="name" style={{ flex: 'none' }}>{r.name}</span>
                 <span className="sub">계획 없음 · 실제 {r.actual}%</span>
               </li>
             ))}
           </ul>
-          {over.length > 0 && <p className="hint">{over.join(', ')}에 계획보다 시간을 더 썼어요.</p>}
         </>
       ) : (
         <>
-          <p className="total">{hasRecords ? fmtMinutes(total) : '아직 기록이 없어요'}</p>
+          <p className="total">{hasRecords ? fmtMinutes(total) : '아직 기록이 없어'}</p>
           <ul className="hbars">
             {[...rows, ...extra].map((r) => {
               const max = Math.max(...[...rows, ...extra].map((x) => x.min), 1)
@@ -117,12 +125,13 @@ export function Status({ data, onWrite, onView }: Props) {
   )
 }
 
-function Bar({ slices }: { slices: { key: string; name: string; ratio: number; color: string }[] }) {
+/** 띠그래프. named 조각에만 이름을 붙이고, 나머지는 자리가 있으면 %만 */
+function Bar({ slices, named }: { slices: { key: string; name: string; ratio: number; color: string }[]; named?: string }) {
   return (
-    <div className="bar">
+    <div className="band" role="img" aria-label={slices.map((s) => `${s.name} ${s.ratio}%`).join(', ')}>
       {slices.map((s) => (
-        <span key={s.key} style={{ width: `${s.ratio}%`, background: s.color }} title={`${s.name} ${s.ratio}%`}>
-          {s.ratio >= 12 ? s.name : ''}
+        <span key={s.key} style={{ flex: `${s.ratio} 1 0`, background: s.color }} aria-hidden="true">
+          {s.key === named ? <>{s.name}<br />{s.ratio}%</> : s.ratio >= 10 ? `${s.ratio}%` : ''}
         </span>
       ))}
     </div>
@@ -132,7 +141,7 @@ function Bar({ slices }: { slices: { key: string; name: string; ratio: number; c
 function Empty({ onWrite }: { onWrite: () => void }) {
   return (
     <p className="hint">
-      아직 기록이 없어요. <button type="button" className="link" onClick={onWrite}>기록하기</button>
+      아직 기록이 없어. <button type="button" className="link" onClick={onWrite}>기록하기</button>
     </p>
   )
 }
