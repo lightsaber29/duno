@@ -42,9 +42,30 @@ export async function loadWeek(weekStart: string): Promise<Week | null> {
   return must(await supabase.from('weeks').select('goal, good, bad, closed_at, target_minutes, changes').eq('week_start', weekStart).maybeSingle<Week>())
 }
 
-/** 마감 흐름을 끝냈거나 건너뛴 표시. 회고 한 줄과 바꾼 것 기록도 같이 저장 */
-export async function closeWeek(weekStart: string, review?: { good: string; bad: string; changes: Changes }): Promise<void> {
-  await saveWeek(weekStart, { ...review, closed_at: new Date().toISOString() })
+/** 마감 흐름을 건너뛴 표시만 */
+export async function skipWeek(weekStart: string): Promise<void> {
+  await saveWeek(weekStart, { closed_at: new Date().toISOString() })
+}
+
+/** 주간 마감 끝내기 입력. 키 뜻은 supabase/phase4.5.sql close_week 주석 */
+export type CloseInput = {
+  lw: string
+  deleted: string[]
+  renamed: { id: string; name: string }[]
+  added: string[]
+  ratios: { id: string; ratio: number }[]
+  weekly: { id?: string; added?: number; ratio: number }[] // 기존은 id, 새 카테고리는 added 안 순서
+  goal: string
+  target_minutes: number
+  copy: { text: string; category_id: string | null }[]
+  good: string
+  bad: string
+  changes: Changes
+}
+
+/** 주간 마감을 한 트랜잭션으로 저장(F1). 반환: 새 카테고리 id(added 순서) */
+export async function closeWeek(p: CloseInput): Promise<string[]> {
+  return must(await supabase.rpc('close_week', { p })) as string[]
 }
 
 /** 주 행이 없으면 만들고, 있으면 넘긴 열만 바꾼다 */
@@ -92,25 +113,15 @@ export async function loadNotes(from: string, to: string): Promise<Record<string
   return Object.fromEntries(rows.map((r) => [r.date, r.note]))
 }
 
-/** 그날 회고 저장: 회고 한 줄과 저장한 때(0분으로 저장해도 기록한 날, RV-5) */
-export async function saveReview(date: string, note: string): Promise<void> {
-  must(await supabase.from('days').upsert({ date, note, reviewed_at: new Date().toISOString() }, { onConflict: 'user_id,date' }))
+/** 그날 회고 저장: 바뀐 시간들과 회고 한 줄·저장한 때(0분으로 저장해도 기록한 날, RV-5)를 한 트랜잭션으로(F7) */
+export async function saveReview(date: string, note: string, times: { id: string; minutes: number }[]): Promise<void> {
+  must(await supabase.rpc('save_review', { d: date, line: note, times }))
 }
 
 /** from~to 주(월요일)의 목표. week_start → goal */
 export async function loadGoals(from: string, to: string): Promise<Record<string, string>> {
   const rows = must(await supabase.from('weeks').select('week_start, goal').gte('week_start', from).lte('week_start', to)) as { week_start: string; goal: string }[]
   return Object.fromEntries(rows.map((r) => [r.week_start, r.goal]))
-}
-
-/** 주간 마감에서 기타로 새 카테고리 만들기 */
-export async function addCategory(name: string, ratio: number, position: number): Promise<Category> {
-  return must(await supabase.from('categories').insert({ name, ratio, position }).select('id, name, ratio').single<Category>())
-}
-
-/** 바뀐 비율만 하나씩(최대 5개) */
-export async function setRatios(rows: { id: string; ratio: number }[]): Promise<void> {
-  for (const r of rows) must(await supabase.from('categories').update({ ratio: r.ratio }).eq('id', r.id))
 }
 
 /** 지금까지 정한 주간 비율 전부(작다: 주 × 카테고리) */
@@ -132,24 +143,4 @@ export async function closeNudge(date: string): Promise<void> {
 /** 주마다 정한 주간 목표 시간(분) 전부. 어느 주 값은 weekTarget으로 찾는다 */
 export async function loadTargets(): Promise<{ week_start: string; target_minutes: number | null }[]> {
   return must(await supabase.from('weeks').select('week_start, target_minutes')) as { week_start: string; target_minutes: number | null }[]
-}
-
-export async function renameCategory(id: string, name: string): Promise<void> {
-  must(await supabase.from('categories').update({ name }).eq('id', id))
-}
-
-/** 지운 표시만. 그 카테고리 할 일과 시간은 그대로 남는다(TD-3) */
-export async function deleteCategory(id: string): Promise<void> {
-  must(await supabase.from('categories').update({ deleted_at: new Date().toISOString() }).eq('id', id))
-}
-
-/** 그 주의 주간 비율 묶음을 통째로 바꾼다 */
-export async function saveWeekRatios(weekStart: string, rows: { category_id: string; ratio: number }[]): Promise<void> {
-  must(await supabase.from('week_ratios').delete().eq('week_start', weekStart))
-  must(await supabase.from('week_ratios').insert(rows.map((r) => ({ week_start: weekStart, ...r }))))
-}
-
-/** 비율 스냅샷: 카테고리를 더하거나 지우기 직전 핵심목표 비율(TD-6). 저장만 하고 보여 주지 않는다 */
-export async function saveSnapshot(cats: Category[]): Promise<void> {
-  must(await supabase.from('ratio_snapshots').insert({ ratios: cats.map((c) => ({ category_id: c.id, name: c.name, ratio: c.ratio })) }))
 }

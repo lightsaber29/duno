@@ -45,8 +45,8 @@ export function Review({ cats, named, onClose, onError }: Props) {
   async function save() {
     setBusy(true)
     try {
-      for (const x of list) if (saved[x.id] !== x.minutes) await updateTodo(x.id, { minutes: x.minutes })
-      await saveReview(t, note.trim())
+      const times = list.filter((x) => saved[x.id] !== x.minutes).map(({ id, minutes }) => ({ id, minutes }))
+      await saveReview(t, note.trim(), times) // 시간·한 줄·저장 표시를 한 번에(F7)
       onClose(t)
     } catch (e) {
       onError(e)
