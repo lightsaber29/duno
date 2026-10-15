@@ -148,3 +148,8 @@ export async function saveWeekRatios(weekStart: string, rows: { category_id: str
   must(await supabase.from('week_ratios').delete().eq('week_start', weekStart))
   must(await supabase.from('week_ratios').insert(rows.map((r) => ({ week_start: weekStart, ...r }))))
 }
+
+/** 비율 스냅샷: 카테고리를 더하거나 지우기 직전 핵심목표 비율(TD-6). 저장만 하고 보여 주지 않는다 */
+export async function saveSnapshot(cats: Category[]): Promise<void> {
+  must(await supabase.from('ratio_snapshots').insert({ ratios: cats.map((c) => ({ category_id: c.id, name: c.name, ratio: c.ratio })) }))
+}
