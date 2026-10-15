@@ -76,3 +76,9 @@ export async function loadNotes(from: string, to: string): Promise<Record<string
 export async function saveNote(date: string, note: string): Promise<void> {
   must(await supabase.from('days').upsert({ date, note }, { onConflict: 'user_id,date' }))
 }
+
+/** from~to 주(월요일)의 목표. week_start → goal */
+export async function loadGoals(from: string, to: string): Promise<Record<string, string>> {
+  const rows = must(await supabase.from('weeks').select('week_start, goal').gte('week_start', from).lte('week_start', to)) as { week_start: string; goal: string }[]
+  return Object.fromEntries(rows.map((r) => [r.week_start, r.goal]))
+}
