@@ -117,7 +117,7 @@ button {
   outline-offset: 2px;
 }
 .primary,
-.p-add button {
+.addrow button {
   border: 0;
   background: var(--accent);
   color: #fff;
@@ -245,25 +245,6 @@ button.goal-t {
   font-weight: 700;
   background: var(--bg);
 }
-.badge {
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 1px 8px;
-  white-space: nowrap;
-}
-.badge.live {
-  background: var(--soft);
-  color: var(--accent);
-}
-.badge.final {
-  background: var(--ok-soft);
-  color: var(--ok);
-}
-.badge.wait {
-  background: var(--line);
-  color: var(--muted);
-}
 .days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -373,13 +354,11 @@ button.t {
   padding: 20px 0;
 }
 .p-add {
-  display: flex;
-  gap: 6px;
   background: var(--surface);
   border-top: 1px solid var(--line);
   padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
 }
-.p-add input {
+.addrow input {
   flex: 1;
   min-width: 0;
   border: 1px solid var(--line);
@@ -388,8 +367,66 @@ button.t {
   padding: 8px 10px;
   font-size: 16px; /* 16px 미만이면 iOS가 확대함 */
 }
-.p-add button {
+.addrow button {
   padding: 0 14px;
+}
+.addrow {
+  display: flex;
+  gap: 6px;
+}
+.picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+.pick {
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+.pick[aria-pressed='true'] {
+  border-color: currentColor;
+  font-weight: 700;
+}
+.hint {
+  margin: 5px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* 핵심목표 · 카테고리 라벨 · 시간 계획 */
+.vis {
+  background: var(--surface);
+  padding: 12px 12px 6px;
+  text-align: center;
+}
+.vis small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+.vis b {
+  font-size: 15px;
+  line-height: 1.35;
+}
+.chip {
+  border: 0;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex: none;
+}
+.task.done .chip {
+  opacity: 0.55;
+}
+.focus {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--accent);
 }
 
 /* 주간 마감·진입 흐름 */

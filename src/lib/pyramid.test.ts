@@ -115,3 +115,11 @@ test('시간 표시', () => {
   assert.equal(fmtMinutes(60), '1시간')
   assert.equal(fmtMinutes(150), '2시간 30분')
 })
+
+test('라벨 누르기: 다음 카테고리, 기타 다음은 첫 번째, 모르는 id는 첫 번째', async () => {
+  const { nextCat } = await import('./cats.ts')
+  assert.equal(nextCat(CATS, 'r'), 'm')
+  assert.equal(nextCat(CATS, 'f'), null, '마지막 다음은 기타')
+  assert.equal(nextCat(CATS, null), 'r')
+  assert.equal(nextCat(CATS, 'gone'), 'r')
+})

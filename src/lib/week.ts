@@ -34,9 +34,6 @@ export function weekKind(ws: string, todayKey: string): WeekKind {
   return ws < cur ? 'past' : ws === cur ? 'current' : 'future'
 }
 
-/** 이번 주보다 앞선 날짜는 읽기 전용 (지난 완료율이 바뀌지 않게) */
-export const isReadOnly = (k: string, todayKey: string) => k < weekStart(todayKey)
-
 /** 완료율. 할 일이 없으면 0% */
 export function rate(todos: { done: boolean }[]) {
   const done = todos.filter((t) => t.done).length

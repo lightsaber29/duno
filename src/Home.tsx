@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { addTodo, deleteTodo, loadTodos, loadWeek, saveWeek, updateTodo, type Todo } from './lib/db'
-import { addDays, isReadOnly, parseKey, rate, today, weekDays, weekKind, weekRange, weekStart } from './lib/week'
+import { addTodo, deleteTodo, loadTodos, loadWeek, saveWeek, updateTodo, type Category, type Setup, type Todo } from './lib/db'
+import { catName, catStyle, nextCat } from './lib/cats'
+import { addDays, parseKey, rate, today, weekDays, weekKind, weekRange, weekStart } from './lib/week'
 
 const WD = ['일', '월', '화', '수', '목', '금', '토']
 const GOAL_LABEL = { past: '지난주 목표', current: '이번 주 목표', future: '다음 주 목표' }
 
-type Props = { onError: (e: unknown) => void; onSignOut: () => void }
-type Loaded = { ws: string; todos: Todo[]; goal: string }
+type Props = { setup: Setup; onError: (e: unknown) => void; onSignOut: () => void }
+type Loaded = { ws: string; todos: Todo[]; goal: string; plan: string }
 
-/** 한 화면: 상단바 → 주간 목표 → 주간 줄 → 일간 목록 → 할 일 입력. 문구는 프로토타입(todo-planner_1.html) 그대로 */
-export function Home({ onError, onSignOut }: Props) {
+/** 메인: 핵심목표 → 상단바 → 주간 목표·시간 계획 → 주간 줄 → 일간 목록 → 카테고리 고르기·할 일 입력. 문구는 프로토타입(킥보드 phase2.html) 그대로 */
+export function Home({ setup, onError, onSignOut }: Props) {
+  const { cats } = setup
   const t = today()
   const thisWeek = weekStart(t)
   const [ws, setWs] = useState(thisWeek)
@@ -18,12 +20,13 @@ export function Home({ onError, onSignOut }: Props) {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const cur = loaded?.ws === ws ? loaded : null
   const [draft, setDraft] = useState('')
+  const [pick, setPick] = useState<string | null>(cats[0]?.id ?? null) // 새 할 일 카테고리. 마지막으로 고른 것
   const addRef = useRef<HTMLInputElement>(null)
 
   const reload = useCallback(
     () =>
       Promise.all([loadTodos(ws, addDays(ws, 6)), loadWeek(ws)])
-        .then(([todos, w]) => setLoaded({ ws, todos, goal: w?.goal ?? '' }))
+        .then(([todos, w]) => setLoaded({ ws, todos, goal: w?.goal ?? '', plan: w?.time_plan ?? '' }))
         .catch(onError),
     [ws, onError],
   )
@@ -34,7 +37,6 @@ export function Home({ onError, onSignOut }: Props) {
   const kind = weekKind(ws, t)
   const days = weekDays(ws)
   const of = (k: string) => (cur?.todos ?? []).filter((x) => x.date === k)
-  const ro = isReadOnly(sel, t)
 
   function goWeek(n: number) {
     const next = n === 0 ? thisWeek : addDays(ws, n)
@@ -58,7 +60,7 @@ export function Home({ onError, onSignOut }: Props) {
     setDraft('')
     addRef.current?.focus()
     try {
-      const row = await addTodo(sel, text)
+      const row = await addTodo(sel, text, pick)
       setLoaded((l) => l && mapTodos((ts) => [...ts, row])(l))
     } catch (e) {
       onError(e)
@@ -68,9 +70,12 @@ export function Home({ onError, onSignOut }: Props) {
 
   const s = parseKey(sel)
   const list = of(sel)
-  const wr = rate(cur?.todos ?? [])
   return (
     <main className="home">
+      <header className="vis">
+        <small>핵심목표</small>
+        <b>{setup.coreGoal}</b>
+      </header>
       <section className="p-week">
         <div className="wk-h">
           <span>
@@ -84,20 +89,9 @@ export function Home({ onError, onSignOut }: Props) {
           </span>
         </div>
         <div className="goal">
-          <small>
-            <span>{GOAL_LABEL[kind]}</span>
-            {kind === 'past' && <span className="badge final">완료율 {wr.pct}% 기록</span>}
-            {kind === 'current' && <span className="badge live">진행 중 {wr.pct}%</span>}
-            {kind === 'future' && <span className="badge wait">시작 전</span>}
-          </small>
-          {cur && (
-            <Goal
-              key={ws}
-              goal={cur.goal}
-              readOnly={kind === 'past'}
-              onSave={(goal) => act((l) => ({ ...l, goal }), saveWeek(ws, { goal }))}
-            />
-          )}
+          <small>{GOAL_LABEL[kind]}</small>
+          {cur && <Goal key={ws} goal={cur.goal} onSave={(goal) => act((l) => ({ ...l, goal }), saveWeek(ws, { goal }))} />}
+          {cur?.plan && <p className="focus">시간 계획: {cur.plan}</p>}
         </div>
         <div className="days">
           {days.map((k) => {
@@ -129,30 +123,41 @@ export function Home({ onError, onSignOut }: Props) {
               <TodoRow
                 key={x.id}
                 todo={x}
-                readOnly={ro}
+                cats={cats}
                 onToggle={(done) => act(mapTodos((ts) => ts.map((y) => (y.id === x.id ? { ...y, done } : y))), updateTodo(x.id, { done }))}
                 onSave={(text) => act(mapTodos((ts) => ts.map((y) => (y.id === x.id ? { ...y, text } : y))), updateTodo(x.id, { text }))}
                 onDelete={() => act(mapTodos((ts) => ts.filter((y) => y.id !== x.id)), deleteTodo(x.id))}
+                onCycle={() => {
+                  const category_id = nextCat(cats, x.category_id)
+                  act(mapTodos((ts) => ts.map((y) => (y.id === x.id ? { ...y, category_id } : y))), updateTodo(x.id, { category_id }))
+                }}
               />
             ))
           ) : (
-            // ponytail: 프로토타입은 날짜와 상관없이 "오늘 할 일을 적어 보세요". 다른 날엔 "오늘"만 빼고, 잠긴 날은 적을 수 없으니 "할 일이 없어요"
-            <p className="empty">{ro ? '할 일이 없어요' : sel === t ? '오늘 할 일을 적어 보세요' : '할 일을 적어 보세요'}</p>
+            <p className="empty">할 일을 적어 보세요</p>
           ))}
       </section>
 
-      {!ro && (
-        <form
-          className="p-add"
-          onSubmit={(e) => {
-            e.preventDefault()
-            add()
-          }}
-        >
+      <form
+        className="p-add"
+        onSubmit={(e) => {
+          e.preventDefault()
+          add()
+        }}
+      >
+        <div className="picks" role="group" aria-label="카테고리 고르기">
+          {[...cats.map((c) => c.id), null].map((id) => (
+            <button key={id ?? 'etc'} type="button" className="pick" style={catStyle(cats, id)} aria-pressed={pick === id} onClick={() => setPick(id)}>
+              {catName(cats, id)}
+            </button>
+          ))}
+        </div>
+        <div className="addrow">
           <input ref={addRef} type="text" value={draft} maxLength={100} placeholder="할 일 추가" aria-label="할 일 입력" onChange={(e) => setDraft(e.target.value)} />
           <button type="submit">추가</button>
-        </form>
-      )}
+        </div>
+        <p className="hint">카테고리를 고르고 추가하세요. 라벨을 누르면 바꿀 수 있어요.</p>
+      </form>
     </main>
   )
 }
@@ -196,24 +201,30 @@ function useInlineEdit(value: string, onSave: (v: string) => void, allowEmpty = 
   return { editing: edit !== null, start: () => setEdit(value), finish, inputProps }
 }
 
-type GoalProps = { goal: string; readOnly: boolean; onSave: (goal: string) => void }
+type GoalProps = { goal: string; onSave: (goal: string) => void }
 
-/** 주간 목표 한 줄. 지난주는 고칠 수 없음 */
-function Goal({ goal, readOnly, onSave }: GoalProps) {
+/** 주간 목표 한 줄. 비워서 지울 수 있다 */
+function Goal({ goal, onSave }: GoalProps) {
   const e = useInlineEdit(goal, onSave, true)
-  if (readOnly) return <div className={'goal-t' + (goal ? '' : ' ph')}>{goal || '적어 둔 목표가 없어요'}</div>
   if (e.editing) return <input key="edit" className="goal-edit" maxLength={40} placeholder="이번 주 목표" aria-label="주간 목표 입력" onBlur={e.finish} {...e.inputProps} />
   return (
     <button key="view" type="button" className={'goal-t' + (goal ? '' : ' ph')} aria-label="주간 목표 고치기" onClick={e.start}>
-      {goal || '목표를 적어 보세요'}
+      {goal || '이번 주 목표를 적어 보세요'}
     </button>
   )
 }
 
-type RowProps = { todo: Todo; readOnly: boolean; onToggle: (done: boolean) => void; onSave: (text: string) => void; onDelete: () => void }
+type RowProps = {
+  todo: Todo
+  cats: Category[]
+  onToggle: (done: boolean) => void
+  onSave: (text: string) => void
+  onDelete: () => void
+  onCycle: () => void
+}
 
-/** 글자를 누르면 수정 칸 + 삭제. 지난주 이전은 체크·수정 모두 꺼짐 */
-function TodoRow({ todo, readOnly, onToggle, onSave, onDelete }: RowProps) {
+/** 체크 · 글자(누르면 수정 칸 + 삭제) · 카테고리 라벨(누르면 다음 카테고리로) */
+function TodoRow({ todo, cats, onToggle, onSave, onDelete, onCycle }: RowProps) {
   const e = useInlineEdit(todo.text, onSave)
 
   if (e.editing)
@@ -229,12 +240,11 @@ function TodoRow({ todo, readOnly, onToggle, onSave, onDelete }: RowProps) {
 
   return (
     <div key="view" className={'task' + (todo.done ? ' done' : '')}>
-      <input type="checkbox" checked={todo.done} disabled={readOnly} aria-label={todo.text} onChange={(ev) => onToggle(ev.target.checked)} />
-      {readOnly ? (
-        <span className="t">{todo.text}</span>
-      ) : (
-        <button type="button" className="t" onClick={e.start}>{todo.text}</button>
-      )}
+      <input type="checkbox" checked={todo.done} aria-label={todo.text} onChange={(ev) => onToggle(ev.target.checked)} />
+      <button type="button" className="t" onClick={e.start}>{todo.text}</button>
+      <button type="button" className="chip" style={catStyle(cats, todo.category_id)} aria-label={`카테고리 바꾸기: 지금 ${catName(cats, todo.category_id)}`} onClick={onCycle}>
+        {catName(cats, todo.category_id)}
+      </button>
     </div>
   )
 }

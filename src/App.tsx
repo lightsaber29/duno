@@ -48,5 +48,5 @@ function Signed({ onError }: { onError: (e: unknown) => void }) {
   if (setup === undefined || close === undefined) return null
   if (!setup) return <Onboard onDone={setSetup} onError={onError} />
   if (close) return <Close {...close} onDone={() => setClose(null)} onError={onError} />
-  return <Home onError={onError} onSignOut={() => supabase.auth.signOut()} />
+  return <Home setup={setup} onError={onError} onSignOut={() => supabase.auth.signOut()} />
 }

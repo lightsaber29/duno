@@ -24,7 +24,7 @@ export function Close({ lw, week, todos, thisGoal, onDone, onError }: Props) {
       if (!skip) {
         // 옮기지 않고 복사: 지난주 완료율이 바뀌지 않게. 순서 유지를 위해 하나씩
         // ponytail: 요청이 여러 번이라 한 묶음이 아니다. 복사 뒤 마감 표시 전에 끊기면 다음에 열 때 복사가 겹칠 수 있음. 문제 되면 DB 함수(rpc) 하나로
-        for (const t of undone) if (pick.has(t.id)) await addTodo(tw, t.text)
+        for (const t of undone) if (pick.has(t.id)) await addTodo(tw, t.text, t.category_id)
         await saveWeek(tw, { goal: goal.trim() })
       }
       await closeWeek(lw, skip ? undefined : { good: good.trim(), bad: bad.trim() })
