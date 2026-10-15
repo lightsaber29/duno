@@ -3,7 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { equalSplit } from './ratio.ts'
-import { coreAfter, fmtMinutes, level, nudge, timeStats, verdict, weekBasis, weekTarget, weeklyDefault } from './pyramid.ts'
+import { coreAfter, fmtMinutes, level, nudge, timeStats, verdict, weekBasis, weekTarget } from './pyramid.ts'
 
 const CATS = [
   { id: 'r', name: '리서치', ratio: 40 },
@@ -48,11 +48,11 @@ test('실제 비율 반올림: 줄마다 반올림하지 않고 합 100', () => 
   assert.deepEqual(rows.map((r) => r.actual), [34, 33, 33, 0])
 })
 
-test('편향 경계: 15를 넘어야(초과) 더/덜, 딱 15는 계획대로 (phase3 BI-3)', () => {
-  assert.equal(level(16), 'over')
-  assert.equal(level(15), 'ok')
-  assert.equal(level(-15), 'ok')
-  assert.equal(level(-16), 'under')
+test('편향 경계: 절댓값 15 이상이면 더/덜, 14는 계획대로 (phase4 BI-4·5)', () => {
+  assert.equal(level(15), 'over')
+  assert.equal(level(14), 'ok')
+  assert.equal(level(-14), 'ok')
+  assert.equal(level(-15), 'under')
   assert.equal(level(null), null)
   assert.deepEqual(verdict(timeStats(CATS, T).rows), { over: ['리서치'], under: ['제작'] })
 })
@@ -63,9 +63,20 @@ test('기록이 없으면 전부 0, 판정 없음', () => {
   assert.deepEqual(rows.map((r) => [r.actual, r.diff]), [[0, null], [0, null], [0, null], [0, null]])
 })
 
-test('모르는 카테고리(지워진 것)는 기타로', () => {
-  const { rows } = timeStats(CATS, [{ category_id: 'gone', minutes: 30, date: day(0) }])
+test('모르는 카테고리는 기타로', () => {
+  const { rows } = timeStats(CATS, [{ category_id: 'unknown', minutes: 30, date: day(0) }])
   assert.equal(rows[3].minutes, 30)
+})
+
+test('지운 카테고리 시간은 전체(분모)에만, 어느 칸에도 안 보임 (TD-4)', () => {
+  const t = [
+    { category_id: 'r', minutes: 60, date: day(0) },
+    { category_id: 'x', minutes: 40, date: day(0) }, // 지운 카테고리
+  ]
+  const { total, rows } = timeStats(CATS, t, ['x'])
+  assert.equal(total, 100)
+  assert.deepEqual(rows.map((r) => [r.name, r.minutes, r.actual]), [['리서치', 60, 60], ['제작', 0, 0], ['피드백', 0, 0], ['기타', 0, 0]], '기타에도 안 들어감')
+  assert.equal(rows[0].diff, 20, '실제 60% − 정한 40%')
 })
 
 test('시간 표시', () => {
@@ -85,7 +96,7 @@ test('라벨 누르기: 다음 카테고리, 기타 다음은 첫 번째, 모르
 
 // ---- phase3: 주간 비율·주간 목표 시간·권유·카테고리 지우기 (docs/자전거 phase3 개발 계획.md) ----
 
-test('주간 비율: 그 주 → 그 이전 가장 최근 → 핵심목표 비율, 묶음에 없는 카테고리는 0 (WG-5, D7)', () => {
+test('주간 비율: 그 주에 정한 묶음, 없으면 핵심목표 비율(이어 쓰지 않음), 묶음에 없는 카테고리는 0 (phase4 WG-5)', () => {
   const rows = [
     { week_start: '2026-10-05', category_id: 'r', ratio: 50 },
     { week_start: '2026-10-05', category_id: 'm', ratio: 30 },
@@ -95,7 +106,7 @@ test('주간 비율: 그 주 → 그 이전 가장 최근 → 핵심목표 비�
   const r = (ws: string) => weekBasis(CATS, rows, ws).map((c) => c.ratio)
   assert.deepEqual(r('2026-09-28'), [40, 40, 20], '그 이전 묶음이 없으면 핵심목표 비율')
   assert.deepEqual(r('2026-10-05'), [50, 30, 20], '그 주 묶음')
-  assert.deepEqual(r('2026-10-12'), [50, 30, 20], '정하지 않은 주는 직전 묶음을 이어 씀')
+  assert.deepEqual(r('2026-10-12'), [40, 40, 20], '정하지 않은 주는 핵심목표 비율(직전 묶음을 이어 쓰지 않음)')
   assert.deepEqual(r('2026-10-19'), [100, 0, 0], '묶음에 없는 카테고리는 0')
 })
 
@@ -112,12 +123,11 @@ test('주간 목표 시간: 그 주 이전 가장 최근 값, 없으면 null', (
   assert.equal(weekTarget(weeks, '2026-10-26'), 900, '값 없는 10/19 행은 건너뛰고 이어 씀')
 })
 
-test('할 일 입력 권유: 15 넘게 덜 쓴 카테고리 중 가장 많이 덜 쓴 것, 1분 이상 할 일 중 가장 짧은 것 (D5)', () => {
+test('할 일 입력 권유: 15 이상 덜 쓴 카테고리 중 편향이 가장 큰 것, 1분 이상 할 일 중 가장 짧은 것 (NU-2~4)', () => {
   // T: 리서치 60%(+20), 제작 20%(-20), 피드백 10%(-10) → 제작만 대상
   const p = nudge(CATS, T.map((t, i) => ({ ...t, text: `t${i}` })))
   assert.equal(p?.name, '제작')
   assert.equal(p?.todo?.minutes, 80, '제작 120분·80분 중 짧은 것')
-  assert.equal(nudge(CATS, []), null, '기록이 없으면 권유 없음')
   // 덜 쓴 곳이 없으면 없음: 정한 비율대로
   const even = [
     { category_id: 'r', minutes: 40, date: day(0) },
@@ -154,10 +164,16 @@ test('카테고리 지우고 더한 뒤 핵심목표 비율: 지운 몫은 원�
   assert.deepEqual(coreAfter([40, 40, 20], [false, false, false], 0), [40, 40, 20], '바꾼 게 없으면 그대로')
 })
 
-test('마감 3단계 주간 비율 기본값: 직전 주간 비율에서 남긴 것만 합 100, 새 것은 0', () => {
-  const basis = [{ id: 'r', name: '리서치', ratio: 60 }, { id: 'm', name: '제작', ratio: 30 }, { id: 'f', name: '피드백', ratio: 10 }]
-  assert.deepEqual(weeklyDefault(basis, ['r', 'm', 'f'], 0), [60, 30, 10])
-  assert.deepEqual(weeklyDefault(basis, ['r', 'm'], 1), [67, 33, 0], '피드백 지우고 하나 더함')
-  assert.deepEqual(weeklyDefault(basis, ['f'], 0), [100])
-  assert.deepEqual(weeklyDefault([{ id: 'r', name: 'r', ratio: 0 }], ['r'], 1), [50, 50], '남긴 것에 비율이 없으면 똑같이')
+
+test('할 일 입력 권유: 기록이 0이어도 진입 직후부터, 핵심목표 비율 15 이상 중 가장 큰 카테고리만 (NU-2)', () => {
+  const p = nudge(CATS, [])
+  assert.deepEqual(p && [p.name, p.todo], ['리서치', null], '40·40·20 중 같으면 앞')
+  assert.equal(nudge([{ id: 'a', name: 'a', ratio: 90 }, { id: 'b', name: 'b', ratio: 10 }], [])?.name, 'a')
+  assert.equal(nudge([{ id: 'a', name: 'a', ratio: 14 }, { id: 'b', name: 'b', ratio: 14 }, { id: 'c', name: 'c', ratio: 72 }].slice(0, 2), []), null, '15 미만뿐이면 없음')
+})
+
+test('할 일 입력 권유: 지운 카테고리 시간은 분모에만 (TD-4)', () => {
+  // 리서치 30 + 지운 70 → 리서치 30%(-10) 계획대로, 제작 0%(-40) 덜, 피드백 0%(-20) 덜 → 제작
+  const p = nudge(CATS, [{ category_id: 'r', minutes: 30, date: day(0) }, { category_id: 'x', minutes: 70, date: day(0) }], ['x'])
+  assert.equal(p?.name, '제작')
 })
