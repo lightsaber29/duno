@@ -100,7 +100,7 @@ export async function createSetup(
   // 조건 없는 delete는 Supabase(safeupdate)가 막아서 항상 참인 조건을 단다
   must(await supabase.from('categories').delete().not('id', 'is', null))
   const rows = must(
-    await supabase.from('categories').insert(cats.map((c, i) => ({ ...c, position: i }))).select('id, name, ratio').order('position'),
+    await supabase.from('categories').insert(cats.map((c, i) => ({ ...c, position: i }))).select('id, name, ratio, position').order('position'),
   ) as Category[]
   await saveWeek(target.week, { target_minutes: target.minutes })
   must(await supabase.from('profiles').insert({ core_goal: coreGoal, started_on: startedOn }))
