@@ -1,20 +1,6 @@
 import { useState } from 'react'
-import {
-  addCategory,
-  addTodo,
-  closeWeek,
-  deleteCategory,
-  renameCategory,
-  saveWeek,
-  saveSnapshot,
-  saveWeekRatios,
-  setRatios,
-  type Category,
-  type Changes,
-  type Setup,
-  type Todo,
-  type Week,
-} from './lib/db'
+import { useBack } from './lib/useBack'
+import { closeWeek, skipWeek, type Category, type Changes, type Setup, type Todo, type Week } from './lib/db'
 import { coreAfter, fmtMinutes, level, timeStats, weekBasis, weekTarget, type WeekRatio } from './lib/pyramid'
 import { equalSplit } from './lib/ratio'
 import { addDays, parseKey, targetMinutes, weekDays, weekRange } from './lib/week'
@@ -55,6 +41,9 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, ratios, targets
   const nowTarget = weekTarget(targets, tw)
 
   const [step, setStep] = useState(1)
+  // 브라우저 뒤로 가기 = 이전 버튼(F2)
+  useBack(step >= 2, () => setStep(1))
+  useBack(step >= 3, () => setStep(2))
   const [good, setGood] = useState(week?.good ?? '')
   const [bad, setBad] = useState(week?.bad ?? '')
   const [edits, setEdits] = useState<Edit[]>(() => cats.map((c) => ({ key: c.id, id: c.id, name: c.name, gone: false })))
@@ -94,44 +83,40 @@ export function Close({ setup, lw, week, todos, notes, thisGoal, ratios, targets
     setStep(3)
   }
 
-  /** 건너뛰기는 마감 표시만. 그 밖에는 카테고리 → 핵심목표 비율 → 주간 비율 → 이번 주 목표·목표 시간 → 복사 → 마감 표시·바꾼 것 */
+  /** 건너뛰기는 마감 표시만. 그 밖에는 카테고리·비율·주간 비율·이번 주 목표·복사·마감 표시를 DB 함수 하나로(한 트랜잭션, F1) */
   async function finish(skip: boolean) {
     setBusy(true)
     try {
       let next = setup
       if (!skip) {
-        // ponytail: 요청이 여러 번이라 한 묶음이 아니다. 마감 표시 전에 끊기면 다음에 열 때 다시 뜨고, 새 카테고리·복사가 겹칠 수 있음. 문제 되면 DB 함수(rpc) 하나로
         const goneIds = new Set(edits.filter((e) => e.gone && e.id).map((e) => e.id))
-        if (fresh.length || goneIds.size) await saveSnapshot(cats) // 더하거나 지우기 직전 핵심목표 비율(TD-6)
-        for (const e of edits) {
-          const c = cats.find((x) => x.id === e.id)
-          if (c && e.gone) await deleteCategory(c.id)
-          else if (c && e.name.trim() !== c.name) await renameCategory(c.id, e.name.trim())
-        }
-        const made: Category[] = []
-        for (const [i, e] of fresh.entries()) made.push(await addCategory(e.name.trim(), 0, cats.length + setup.gone.length + i))
-        const liveCats: Category[] = [
-          ...keep.map((id, i) => ({ id, name: edits.find((e) => e.id === id)!.name.trim(), ratio: core[i] })),
-          ...made.map((c, i) => ({ ...c, ratio: core[keep.length + i] })),
-        ]
-        if (coreChanged) await setRatios(liveCats.slice(0, keep.length).filter((c) => c.ratio !== cats.find((x) => x.id === c.id)!.ratio))
-        const keyToId = (k: string) => made[fresh.findIndex((e) => e.key === k)]?.id ?? k
-        await saveWeekRatios(tw, live.map((e) => ({ category_id: keyToId(e.key), ratio: weekly[e.key] ?? 0 })))
-        await saveWeek(tw, { goal: goal.trim(), target_minutes: minutes })
-        // 옮기지 않고 복사: 지난주 기록이 바뀌지 않게. 지운 카테고리 일은 기타로. 순서 유지를 위해 하나씩
-        for (const t of undone) if (pick.has(t.id)) await addTodo(tw, t.text, t.category_id && goneIds.has(t.category_id) ? null : t.category_id)
-        const before = core // 주간 비율 기본값
         const changes: Changes = {
           goal: goal.trim() !== thisGoal,
-          ratio: live.some((e, i) => (weekly[e.key] ?? 0) !== before[i]),
+          ratio: live.some((e, i) => (weekly[e.key] ?? 0) !== core[i]), // 기본값 = 카테고리를 바꾼 뒤 핵심목표 비율
           target: minutes !== nowTarget,
           added: fresh.length,
           renamed: edits.filter((e) => e.id && !e.gone && e.name.trim() !== cats.find((c) => c.id === e.id)!.name).length,
           deleted: goneIds.size,
         }
-        await closeWeek(lw, { good: good.trim(), bad: bad.trim(), changes })
+        const kept = keep.map((id, i) => ({ id, name: edits.find((e) => e.id === id)!.name.trim(), ratio: core[i] }))
+        const made = await closeWeek({
+          lw,
+          deleted: [...goneIds] as string[],
+          renamed: kept.filter((c) => c.name !== cats.find((x) => x.id === c.id)!.name).map(({ id, name }) => ({ id, name })),
+          added: fresh.map((e) => e.name.trim()),
+          ratios: kept.filter((c) => c.ratio !== cats.find((x) => x.id === c.id)!.ratio).map(({ id, ratio }) => ({ id, ratio })),
+          weekly: live.map((e) => ({ ...(e.id ? { id: e.id } : { added: fresh.indexOf(e) }), ratio: weekly[e.key] ?? 0 })),
+          goal: goal.trim(),
+          target_minutes: minutes!,
+          // 옮기지 않고 복사: 지난주 기록이 바뀌지 않게. 지운 카테고리 일은 기타로
+          copy: undone.filter((t) => pick.has(t.id)).map((t) => ({ text: t.text, category_id: t.category_id && goneIds.has(t.category_id) ? null : t.category_id })),
+          good: good.trim(),
+          bad: bad.trim(),
+          changes,
+        })
+        const liveCats: Category[] = [...kept, ...fresh.map((e, i) => ({ id: made[i], name: e.name.trim(), ratio: core[keep.length + i] }))]
         next = { ...setup, cats: liveCats, gone: [...setup.gone, ...cats.filter((c) => goneIds.has(c.id))] }
-      } else await closeWeek(lw)
+      } else await skipWeek(lw)
       onDone(next, skip)
     } catch (e) {
       onError(e)

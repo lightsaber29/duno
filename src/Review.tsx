@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { addTodo, loadNotes, loadTodos, saveReview, updateTodo, type Category, type Todo } from './lib/db'
-import { catName, catStyle, nextCat } from './lib/cats'
+import { CatChip, CatPicks } from './CatChip'
 import { fmtMinutes, timeStats } from './lib/pyramid'
 import { today } from './lib/week'
 
@@ -36,7 +36,7 @@ export function Review({ cats, named, onClose, onError }: Props) {
   }, [onError])
 
   const list = todos ?? []
-  const sum = timeStats(cats, list)
+  const sum = timeStats(cats, list, named.filter((c) => !cats.includes(c)).map((c) => c.id)) // 지운 카테고리 시간은 합계에만, 기타로 보이지 않게(TD-4)
   const total = list.reduce((a, x) => a + x.minutes, 0)
   const over = total > DAY
   const dirty = list.some((x) => saved[x.id] !== x.minutes) || note.trim() !== savedNote
@@ -45,8 +45,8 @@ export function Review({ cats, named, onClose, onError }: Props) {
   async function save() {
     setBusy(true)
     try {
-      for (const x of list) if (saved[x.id] !== x.minutes) await updateTodo(x.id, { minutes: x.minutes })
-      await saveReview(t, note.trim())
+      const times = list.filter((x) => saved[x.id] !== x.minutes).map(({ id, minutes }) => ({ id, minutes }))
+      await saveReview(t, note.trim(), times) // 시간·한 줄·저장 표시를 한 번에(F7)
       onClose(t)
     } catch (e) {
       onError(e)
@@ -85,20 +85,16 @@ export function Review({ cats, named, onClose, onError }: Props) {
               <div className="rv-t">
                 <span className="tx">{x.text}</span>
                 {x.done && <span className="ck">✓ 완료</span>}
-                <button
-                  type="button"
-                  className="chip"
-                  style={catStyle(cats, x.category_id)}
-                  aria-label={`카테고리 바꾸기: 지금 ${catName(named, x.category_id)}`}
-                  onClick={() => {
+                <CatChip
+                  id={x.category_id}
+                  cats={cats}
+                  named={named}
+                  onPick={(category_id) => {
                     // 카테고리는 바로 바꾼다. 기록 시간도 그 할 일을 따라 옮겨 간다(8절)
-                    const category_id = nextCat(cats, x.category_id)
                     setTodos((ts) => ts && ts.map((y) => (y.id === x.id ? { ...y, category_id } : y)))
                     updateTodo(x.id, { category_id }).catch(onError)
                   }}
-                >
-                  {catName(named, x.category_id)}
-                </button>
+                />
               </div>
               <div className="hm">
                 <input
@@ -136,13 +132,7 @@ export function Review({ cats, named, onClose, onError }: Props) {
         }}
       >
         <span className="rv-add-h">+ 목록에 없던 일</span>
-        <div className="picks" role="group" aria-label="카테고리 고르기">
-          {[...cats.map((c) => c.id), null].map((id) => (
-            <button key={id ?? 'etc'} type="button" className="pick" style={catStyle(cats, id)} aria-pressed={pick === id} onClick={() => setPick(id)}>
-              {catName(cats, id)}
-            </button>
-          ))}
-        </div>
+        <CatPicks cats={cats} value={pick} onPick={setPick} />
         <input type="text" maxLength={30} value={extra.text} placeholder="예: 회의실 예약" aria-label="목록에 없던 일" onChange={(e) => setExtra({ ...extra, text: e.target.value })} />
         <div className="hm">
           <input type="number" inputMode="numeric" min={0} max={23} value={extra.h} aria-label="시간" onChange={(e) => setExtra({ ...extra, h: clamp(e.target.value, 23) })} />

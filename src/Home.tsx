@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { addTodo, closeNudge, deleteTodo, loadDay, loadTodos, loadWeek, saveWeek, updateTodo, type Category, type Setup, type Todo } from './lib/db'
-import { catName, catStyle, nextCat } from './lib/cats'
 import { fmtMinutes, nudge } from './lib/pyramid'
 import { addDays, isEvening, parseKey, rate, today, weekDays, weekKind, weekRange, weekStart } from './lib/week'
 import { Review } from './Review'
 import { Pyramid } from './Pyramid'
+import { useBack } from './lib/useBack'
+import { CatChip, CatPicks } from './CatChip'
 
 const WD = ['일', '월', '화', '수', '목', '금', '토']
 const GOAL_LABEL = { past: '지난주 목표', current: '이번 주 목표', future: '다음 주 목표' }
@@ -107,20 +108,18 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
     }
   }
 
-  if (review)
-    return (
-      <Review
-        cats={cats}
-        named={named}
-        onError={onError}
-        onClose={(date) => {
-          setReview(false)
-          setWs(weekStart(date))
-          setSel(date)
-          setVersion((v) => v + 1)
-        }}
-      />
-    )
+  /** 회고에서 돌아오면 그날을 고르고 다시 불러온다(목록 밖 할 일은 저장 안 해도 이미 들어가 있다) */
+  function closeReview(date = t) {
+    setReview(false)
+    setWs(weekStart(date))
+    setSel(date)
+    setVersion((v) => v + 1)
+  }
+  // 브라우저 뒤로 가기 = 돌아가기 버튼(F2). 회고에서 저장 안 한 시간은 "저장 안 하고 나가기"와 같이 버려진다
+  useBack(review, closeReview)
+  useBack(pyramid, () => setPyramid(false))
+
+  if (review) return <Review cats={cats} named={named} onError={onError} onClose={closeReview} />
 
   if (pyramid) return <Pyramid setup={setup} onClose={() => setPyramid(false)} onSignOut={onSignOut} onError={onError} />
 
@@ -149,7 +148,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
           <span>
             {ws !== thisWeek && <button type="button" className="now" onClick={() => goWeek(0)}>이번 주로</button>}
             <button type="button" className="pill" onClick={() => setReview(true)}>회고</button>
-            <button type="button" className="pill" aria-label="편향 보기" onClick={() => setPyramid(true)}>△</button>
+            <button type="button" className="pill" onClick={() => setPyramid(true)}>편향 보기</button>
           </span>
         </div>
         <div className="goal">
@@ -191,10 +190,9 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
                 onToggle={(done) => act(mapTodos((ts) => ts.map((y) => (y.id === x.id ? { ...y, done } : y))), updateTodo(x.id, { done }))}
                 onSave={(text) => act(mapTodos((ts) => ts.map((y) => (y.id === x.id ? { ...y, text } : y))), updateTodo(x.id, { text }))}
                 onDelete={() => act(mapTodos((ts) => ts.filter((y) => y.id !== x.id)), deleteTodo(x.id))}
-                onCycle={() => {
-                  const category_id = nextCat(cats, x.category_id)
+                onPick={(category_id) =>
                   act(mapTodos((ts) => ts.map((y) => (y.id === x.id ? { ...y, category_id } : y))), updateTodo(x.id, { category_id }))
-                }}
+                }
               />
             ))
           ) : (
@@ -218,13 +216,7 @@ export function Home({ setup, startMonday, onError, onSignOut }: Props) {
             <button type="button" className="nudge-close" onClick={dismissNudge}>닫기</button>
           </div>
         )}
-        <div className="picks" role="group" aria-label="카테고리 고르기">
-          {[...cats.map((c) => c.id), null].map((id) => (
-            <button key={id ?? 'etc'} type="button" className="pick" style={catStyle(cats, id)} aria-pressed={pick === id} onClick={() => setPick(id)}>
-              {catName(cats, id)}
-            </button>
-          ))}
-        </div>
+        <CatPicks cats={cats} value={pick} onPick={setPick} />
         <div className="addrow">
           <input ref={addRef} type="text" value={draft} maxLength={100} placeholder="할 일 추가" aria-label="할 일 입력" onChange={(e) => setDraft(e.target.value)} />
           <button type="submit">추가</button>
@@ -294,11 +286,11 @@ type RowProps = {
   onToggle: (done: boolean) => void
   onSave: (text: string) => void
   onDelete: () => void
-  onCycle: () => void
+  onPick: (id: string | null) => void
 }
 
-/** 체크 · 글자(누르면 수정 칸 + 삭제) · 카테고리 라벨(누르면 다음 카테고리로) */
-function TodoRow({ todo, cats, named, onToggle, onSave, onDelete, onCycle }: RowProps) {
+/** 체크 · 글자(누르면 수정 칸 + 삭제) · 카테고리 라벨(누르면 고르기 줄) */
+function TodoRow({ todo, cats, named, onToggle, onSave, onDelete, onPick }: RowProps) {
   const e = useInlineEdit(todo.text, onSave)
 
   if (e.editing)
@@ -316,9 +308,7 @@ function TodoRow({ todo, cats, named, onToggle, onSave, onDelete, onCycle }: Row
     <div key="view" className={'task' + (todo.done ? ' done' : '')}>
       <input type="checkbox" checked={todo.done} aria-label={todo.text} onChange={(ev) => onToggle(ev.target.checked)} />
       <button type="button" className="t" onClick={e.start}>{todo.text}</button>
-      <button type="button" className="chip" style={catStyle(cats, todo.category_id)} aria-label={`카테고리 바꾸기: 지금 ${catName(named, todo.category_id)}`} onClick={onCycle}>
-        {catName(named, todo.category_id)}
-      </button>
+      <CatChip id={todo.category_id} cats={cats} named={named} onPick={onPick} />
     </div>
   )
 }

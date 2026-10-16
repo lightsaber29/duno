@@ -24,7 +24,7 @@ export default function App() {
   const [error, setError] = useState('')
   const onError = useCallback((e: unknown) => setError(String((e as Error).message ?? e)), [])
 
-  if (session === undefined) return null
+  if (session === undefined) return <Loading />
   return (
     <>
       {/* key: 다른 계정으로 바꿔 들어오면 앞 사람 상태를 버리고 새로 */}
@@ -33,6 +33,16 @@ export default function App() {
         <p role="alert" className="error" onClick={() => setError('')}>{error}</p>
       )}
     </>
+  )
+}
+
+/** 세션·첫 데이터를 기다리는 동안. 흰 화면이면 앱이 죽은 줄 안다(피드백 F3). 로그인 화면과 같은 틀 */
+function Loading() {
+  return (
+    <main className="login" aria-busy="true">
+      <span className="logo pulse">DUNO</span>
+      <p>불러오는 중…</p>
+    </main>
   )
 }
 
@@ -57,7 +67,7 @@ function Signed({ onError }: { onError: (e: unknown) => void }) {
       })
   }, [onError])
 
-  if (setup === undefined || close === undefined) return null
+  if (setup === undefined || close === undefined) return <Loading />
   if (!setup) return <Onboard onDone={setSetup} onError={onError} />
   if (close)
     return (

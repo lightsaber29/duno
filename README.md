@@ -16,6 +16,7 @@ AI 네이티브 커리어 캠프 3차 프로젝트
    - `supabase/phase2.sql`: 핵심목표·카테고리·할 일 시간·회고 한 줄. 기존 데이터는 그대로 둔다. 한 번만.
    - `supabase/phase3.sql`: 주간 목표 시간·주간 비율·카테고리 지운 표시·할 일 입력 권유. 기존 데이터는 그대로 둔다. 한 번만.
    - `supabase/phase4.sql`: 진입일·비율 스냅샷·회고 저장 표시. 기존 데이터는 그대로 둔다. 한 번만.
+   - `supabase/phase4.5.sql`: 주간 마감·회고 저장 함수(한 트랜잭션). 다시 실행해도 된다.
 2. Google 로그인 설정 (아래 절).
 3. Authentication > URL Configuration의 Redirect URLs에 `http://localhost:5173/**`와 배포 주소 `/**`를 넣는다.
 4. `.env.example`을 `.env`로 복사하고 URL과 publishable key(`sb_publishable_...`)를 넣는다. Legacy anon key는 쓰지 않는다.

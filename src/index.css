@@ -163,6 +163,19 @@ button {
   margin: 0 0 16px;
   color: var(--muted);
 }
+.pulse {
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes pulse {
+  to {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+}
 .login .primary {
   padding: 12px;
   font-weight: 700;
@@ -967,4 +980,57 @@ button.t {
   padding: 0;
   font-size: inherit;
   text-decoration: underline;
+}
+
+/* 누르는 것은 높이 36px 이상(피드백 D1). 글자 크기는 거의 그대로, 누르는 영역만 키운다 */
+.chip,
+.pick,
+.wk-h button,
+.nudge-take,
+.nudge-close,
+.py-tabs button,
+.ob-btns button,
+.ob-row .x,
+.task .del {
+  min-height: 36px;
+}
+.chip,
+.pick {
+  padding: 0 12px;
+  font-size: 12px;
+}
+.ob-row .x {
+  min-width: 36px;
+}
+.task input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+}
+.dbtn {
+  font-size: 12px;
+}
+/* 라벨을 누르면 펼쳐지는 고르기 줄은 할 일 아래 한 줄을 다 쓴다(D2) */
+.task,
+.rv-t {
+  flex-wrap: wrap;
+}
+.task .t,
+.rv-t .tx {
+  flex: 1 1 0;
+}
+.chip-picks {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+}
+/* 상단 줄: 주 범위와 버튼 묶음이 각자 한 덩어리로(편향 보기를 글자로 바꾼 뒤 320px 폭에서 줄이 깨졌다, D3) */
+.wk-h > span {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.wk-h button {
+  padding: 0 6px;
+}
+.wk-h .pill {
+  padding: 0 9px;
 }
